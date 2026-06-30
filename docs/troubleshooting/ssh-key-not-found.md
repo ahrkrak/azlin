@@ -24,7 +24,7 @@ azlin connect myvm -v
 
 ```bash
 # Ubuntu/Debian
-sudo apt-get install openssh-client
+sudo tdnf install openssh-client
 
 # RHEL/Fedora
 sudo dnf install openssh-clients

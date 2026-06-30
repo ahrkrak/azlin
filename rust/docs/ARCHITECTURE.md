@@ -152,7 +152,7 @@ Adds: VM Name | SKU
 
 ### Data Enrichment
 
-- **OS** -- detected from image offer string (Ubuntu codenames, RHEL, Debian, etc.)
+- **OS** -- detected from image offer string (Azure Linux 4.0 codenames, RHEL, Debian, etc.)
 - **IP** -- annotated `(Pub)` / `(Bast)` / `N/A`
 - **CPU/Mem** -- exact values from `az vm list-sizes` (cached per region)
 - **Tmux** -- session count from SSH probe

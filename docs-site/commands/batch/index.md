@@ -135,7 +135,7 @@ azlin batch start --tag 'env=test'
 
 ```bash
 # Update all VMs
-azlin batch command 'sudo apt update && sudo apt upgrade -y' --all --timeout 900
+azlin batch command 'sudo tdnf update -y' --all --timeout 900
 
 # Check disk space
 azlin batch command 'df -h' --all --show-output

@@ -35,7 +35,7 @@ Based on the 10 user requirements, we'll organize tests as follows:
    - VM configuration building
    - Size validation (specific VM sizes)
    - Region validation
-   - Ubuntu image selection
+   - Azure Linux 4.0 image selection
    - Network configuration
    - Resource group creation
    - Error handling for quota limits
@@ -285,7 +285,7 @@ def sample_vm_config():
         'name': 'test-vm',
         'size': 'Standard_D2s_v3',
         'region': 'eastus',
-        'image': 'Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest'
+        'image': 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'
     }
 
 @pytest.fixture
@@ -350,9 +350,9 @@ SAMPLE_VM_RESPONSE = {
         'hardwareProfile': {'vmSize': 'Standard_D2s_v3'},
         'storageProfile': {
             'imageReference': {
-                'publisher': 'Canonical',
-                'offer': '0001-com-ubuntu-server-jammy',
-                'sku': '22_04-lts',
+                'publisher': 'MicrosoftCBLMariner',
+                'offer': 'azure-linux-4',
+                'sku': 'azure-linux-4-gen2',
                 'version': 'latest'
             }
         },

@@ -51,7 +51,7 @@ You'll see:
 │ Azure CLI. This causes subprocess deadlock issues.        │
 │                                                            │
 │ Current configuration:                                     │
-│   Environment:  WSL2 (Ubuntu 22.04)                       │
+│   Environment:  WSL2 (Azure Linux 4.0)                       │
 │   Windows CLI:  /mnt/c/Program Files/.../az.cmd          │
 │   Linux CLI:    Not installed                             │
 │                                                            │

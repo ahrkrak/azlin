@@ -88,7 +88,7 @@ azlin new --name dev-base
 azlin connect dev-base
 
 # Install tools, configure environment
-sudo apt install -y build-essential python3 nodejs
+sudo tdnf install -y build-essential python3 nodejs
 git clone https://github.com/myorg/project
 # ... more setup ...
 

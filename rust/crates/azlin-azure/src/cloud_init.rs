@@ -270,7 +270,7 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
         "mkdir -p -m 755 /etc/apt/keyrings && wget -nv -O /etc/apt/keyrings/githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && mkdir -p -m 755 /etc/apt/sources.list.d && echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && apt update && apt install -y gh".to_string(),
         // Azure CLI
         "curl -sL https://aka.ms/InstallAzureCLIDeb | bash".to_string(),
-        // Chromium (Ubuntu ships this as a snap-backed launcher)
+        // Chromium (Azure Linux 4.0 ships this as a snap-backed launcher)
         "apt-get install -y chromium-browser".to_string(),
         // Chromium wrappers so SSH/X11 launches use a scoped user session instead of
         // failing with the snap cgroup error.
@@ -320,7 +320,7 @@ chmod 755 /usr/local/bin/chromium"#.to_string(),
         format!("mkdir -p /home/{u}/.npm-packages && echo 'prefix=${{HOME}}/.npm-packages' > /home/{u}/.npmrc && chown {u}:{u} /home/{u}/.npmrc /home/{u}/.npm-packages", u = username),
         // Tmux configuration
         format!("printf '[%%s] %%s\\n' \"$(hostname)\" \"tmux.conf\" && cat > /home/{u}/.tmux.conf << 'TMUXEOF'\nset -g status-left-length 50\nset -g status-left \"#[fg=cyan][#h]#[fg=green] #S #[fg=yellow]| \"\nset -g status-right \"#[fg=cyan]%%Y-%%m-%%d %%H:%%M\"\nset -g status-interval 60\nset -g status-bg black\nset -g status-fg white\nTMUXEOF\nchown {u}:{u} /home/{u}/.tmux.conf", u = username),
-        // Fix tmux socket dir permissions (Ubuntu 25.10+)
+        // Fix tmux socket dir permissions (Azure Linux 4.0+)
         format!("chmod 1777 /tmp && TMUX_UID=$(id -u {u}) && mkdir -p /tmp/tmux-$TMUX_UID && chmod 700 /tmp/tmux-$TMUX_UID && chown {u}:{u} /tmp/tmux-$TMUX_UID", u = username),
         // Claude Code AI Assistant
         format!("su - {u} -c 'curl -fsSL https://claude.ai/install.sh | bash' || echo 'WARNING: Claude Code installation failed'", u = username),

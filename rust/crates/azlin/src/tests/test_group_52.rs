@@ -141,7 +141,7 @@ fn test_log_tail_args_includes_line_count() {
 fn test_build_dev_update_script_not_empty() {
     let script = crate::update_helpers::build_dev_update_script();
     assert!(script.starts_with("#!/bin/bash\n"));
-    assert!(script.contains("apt-get update"));
+    assert!(script.contains("tdnf update"));
     assert!(script.contains("rustup update"));
     assert!(script.contains("npm install"));
 }
@@ -149,8 +149,7 @@ fn test_build_dev_update_script_not_empty() {
 #[test]
 fn test_build_os_update_cmd_contains_apt() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("apt-get update"));
-    assert!(cmd.contains("apt-get upgrade"));
+    assert!(cmd.contains("tdnf update"));
 }
 
 #[test]

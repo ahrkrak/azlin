@@ -48,7 +48,7 @@ azlin help
 
 **Output:**
 ```
-azlin - Azure Ubuntu VM provisioning and management
+azlin - Azure Linux 4.0 VM provisioning and management
 
 NATURAL LANGUAGE COMMANDS (AI-POWERED):
   do            Execute commands using natural language

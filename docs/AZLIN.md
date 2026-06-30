@@ -112,7 +112,7 @@ azlin list
 
 ### `azlin new` - Provision a new VM
 
-Create a fresh Azure Ubuntu VM with all development tools pre-installed.
+Create a fresh Azure Linux 4.0 VM with all development tools pre-installed.
 
 **Aliases**: `azlin create`
 
@@ -392,16 +392,16 @@ azlin vm update-tools my-vm --timeout 600
 ```
 
 **What gets updated**:
-- System packages (`apt-get update && apt-get upgrade`)
+- System packages (`tdnf update`)
 - Rust toolchain (`rustup update`)
 - Python package manager (`pip install --upgrade pip`)
 - Node.js package manager (`npm install -g npm`)
 
 **Time**: 2-5 minutes
 
-### `azlin os-update` - Update Ubuntu packages
+### `azlin os-update` - Update Azure Linux 4.0 packages
 
-Run system package updates (apt update && apt upgrade).
+Run system package updates (`tdnf update`).
 
 ```bash
 # Update OS packages by session name
@@ -415,8 +415,8 @@ azlin os-update my-vm --timeout 600
 ```
 
 **What happens**:
-1. `sudo apt update` - Refresh package lists
-2. `sudo apt upgrade -y` - Install updates (non-interactive)
+1. `sudo tdnf update` - Refresh metadata and install updates
+2. Non-interactive mode applies available updates
 
 **Time**: 30 seconds to 10 minutes
 
@@ -1042,7 +1042,7 @@ cat ~/.azure/az.log
 | `azlin destroy` | Advanced delete | `azlin destroy --dry-run` |
 | `azlin killall` | Delete all VMs | `azlin killall` |
 | `azlin vm update-tools` | Update dev tools | `azlin vm update-tools my-vm` |
-| `azlin os-update` | Update Ubuntu | `azlin os-update my-vm` |
+| `azlin os-update` | Update Azure Linux 4.0 | `azlin os-update my-vm` |
 | `azlin session` | Manage names | `azlin session vm-123 my-name` |
 | `azlin w` | Who's logged in | `azlin w` |
 | `azlin ps` | Show processes | `azlin ps` |

@@ -42,9 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Real-time monitoring: latency, traffic, errors, saturation
 - Actionable health status for each VM
 
-#### `--os` Option for Ubuntu Version Selection (#715)
-- Specify Ubuntu version when creating VMs (e.g., `--os 25.10`)
-- Full support for Ubuntu 25.10
+#### `--os` Option for Azure Linux 4.0 Version Selection (#715)
+- Specify Azure Linux 4.0 version when creating VMs (e.g., `--os azurelinux4`)
+- Full support for Azure Linux 4.0
 
 #### Separate /tmp Disk Support (#686)
 - Add dedicated /tmp disks to new or existing VMs
@@ -55,8 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Works across all commands (connect, exec, code, etc.)
 
 #### OS Icon and Distro Column in `azlin list` (#728)
-- Detects distro from Azure image reference (Ubuntu, Debian, Windows, RHEL, SUSE)
-- OS name includes version (e.g., "Ubuntu 25.10", "Ubuntu 22.04 LTS")
+- Detects distro from Azure image reference (Azure Linux 4.0, Debian, Windows, RHEL, SUSE)
+- OS name includes version (e.g., "Azure Linux 4.0", "Azure Linux 4.0")
 
 #### Session Save/Load and Active Process Monitoring
 - Save and restore session state across VM restarts
@@ -87,9 +87,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 - Fix WSL SSH config sync for `azlin code` (#731)
-- Auto-remediate tmux socket dir on Ubuntu 25.10 VMs during connect (#723)
+- Auto-remediate tmux socket dir on Azure Linux 4.0 VMs during connect (#723)
 - Fix cloud-init runcmd YAML parsing failure from version logging (#725)
-- Make cloud-init work on Ubuntu 25.10 for npm and ripgrep (#727)
+- Make cloud-init work on Azure Linux 4.0 for npm and ripgrep (#727)
 - Always measure SSH latency when `--with-latency` is requested (#721)
 - Fix `azlin list -q` not showing quota when VMs are cached (#688)
 - Add missing `--mount` flag to disk add help text (#706)
@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add 8 GitHub Agentic Workflows for continuous improvement and maintenance
 - Full system upgrade and gh CLI install in cloud-init (#719)
-- Add tmux socket directory permissions for Ubuntu 25.10 (#718)
+- Add tmux socket directory permissions for Azure Linux 4.0 (#718)
 - Version logging for npm and rg during VM provisioning (#717)
 
 ## [2.2.2] - 2026-02-11
@@ -186,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reduced cli.py from 10,011 to 2,527 lines (75% reduction)
   - Created self-contained modules following Bricks & Studs architecture
   - All existing CLI commands preserved with backward compatibility
-- Default Ubuntu version updated from 22.04 to 24.04 LTS (#559)
+- Default Azure Linux 4.0 version updated from 22.04 to 24.04 LTS (#559)
 - Various timeout improvements for WSL/Windows compatibility
 
 ### Added

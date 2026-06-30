@@ -205,7 +205,7 @@ window.azlin.auth.getStatus()
    - Name: dev-vm-01
    - Size: Standard_D2s_v3
    - Region: eastus
-   - Image: Ubuntu 22.04
+   - Image: Azure Linux 4.0
 4. Tap "Create" (takes 3-5 minutes)
 ```
 
@@ -307,7 +307,7 @@ az ad app show --id <client-id> --query "publicClient.allowDeviceCodeFlow"
 **Solution**:
 ```bash
 # SSH to VM and install tmux
-sudo apt-get update && sudo apt-get install -y tmux
+sudo tdnf install -y tmux
 
 # Start a session
 tmux new -s test-session

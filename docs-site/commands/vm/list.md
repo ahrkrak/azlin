@@ -139,10 +139,10 @@ The `azlin list` command displays a table with the following columns:
 
 | Column | Description |
 |--------|-------------|
-| **Session** | Named session with OS icon prefix (e.g., 🟠 for Ubuntu, 🐧 for Linux, 🪟 for Windows) |
+| **Session** | Named session with OS icon prefix (e.g., 🟠 for Azure Linux 4.0, 🐧 for Linux, 🪟 for Windows) |
 | **Tmux Sessions** | Active tmux sessions (if `--show-tmux`) |
 | **VM Name** | VM identifier (only in `--wide` mode) |
-| **OS** | Operating system name and version (e.g., Ubuntu 25.10, Ubuntu 22.04 LTS) |
+| **OS** | Operating system name and version (e.g., Azure Linux 4.0, Azure Linux 4.0) |
 | **Status** | Running, Stopped, Deallocated, etc. |
 | **IP** | Public IP (or private IP with "Bast" for bastion-only) |
 | **Region** | Azure region (e.g., eastus, westus2) |
@@ -160,10 +160,10 @@ The `azlin list` command displays a table with the following columns:
 ┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━┳━━━━━━┓
 ┃ Session        ┃ OS               ┃ Status  ┃ IP               ┃ Region  ┃ CPU ┃  Mem ┃
 ┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━╇━━━━━━┩
-│ 🟠 ml-train    │ Ubuntu 25.10     │ Running │ 20.123.45.67     │ eastus  │  32 │ 64GB │
-│ 🟠 backend-dev │ Ubuntu 22.04 LTS │ Running │ 20.123.45.68     │ westus2 │  16 │ 32GB │
+│ 🟠 ml-train    │ Azure Linux 4.0     │ Running │ 20.123.45.67     │ eastus  │  32 │ 64GB │
+│ 🟠 backend-dev │ Azure Linux 4.0 │ Running │ 20.123.45.68     │ westus2 │  16 │ 32GB │
 │ 🪟 webapp      │ Windows Server   │ Running │ 20.123.45.69     │ eastus  │   2 │  4GB │
-│ 🟠 -           │ Ubuntu 24.04 LTS │ Stopped │ -                │ eastus  │   2 │  4GB │
+│ 🟠 -           │ Azure Linux 4.0 │ Stopped │ -                │ eastus  │   2 │  4GB │
 └────────────────┴──────────────────┴─────────┴──────────────────┴─────────┴─────┴──────┘
 
 Total: 50 vCPUs used | Quota: 100 vCPUs available (50 remaining)

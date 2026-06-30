@@ -365,7 +365,7 @@ auto-connect steps.
 **Solution 1: Check username**
 ```bash
 # Try different usernames
-azlin connect my-vm --user ubuntu
+azlin connect my-vm --user azureuser
 azlin connect my-vm --user admin
 ```
 
@@ -1015,8 +1015,8 @@ If tmux be not installed:
 # Connect to VM
 azlin connect my-vm
 
-# Install tmux (Ubuntu/Debian)
-sudo apt-get update && sudo apt-get install -y tmux
+# Install tmux (Azure Linux 4.0/Debian)
+sudo tdnf install -y tmux
 
 # Or (RHEL/CentOS)
 sudo yum install -y tmux
@@ -1349,7 +1349,7 @@ azlin --debug list 2>&1 > tmux-detection-debug.log
 5. **Install tmux on all VMs:**
    ```bash
    # Include in VM provisioning scripts
-   sudo apt-get install -y tmux  # Ubuntu/Debian
+   sudo tdnf install -y tmux  # Azure Linux 4.0
    sudo yum install -y tmux      # RHEL/CentOS
    ```
 

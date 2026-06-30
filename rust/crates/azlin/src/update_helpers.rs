@@ -4,8 +4,7 @@ pub fn build_dev_update_script() -> &'static str {
         "#!/bin/bash\n",
         "set -e\n",
         "echo 'Updating system packages...'\n",
-        "sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq\n",
-        "sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq\n",
+        "sudo tdnf update -y -q\n",
         "echo 'Updating Rust toolchain...'\n",
         "if command -v rustup &>/dev/null; then rustup update 2>/dev/null || true; fi\n",
         "echo 'Updating Python packages...'\n",
@@ -18,7 +17,7 @@ pub fn build_dev_update_script() -> &'static str {
 
 /// Build the OS-only update command.
 pub fn build_os_update_cmd() -> &'static str {
-    "sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
+    "sudo tdnf update -y -q"
 }
 
 /// Map a log type name to its file path on the remote VM.

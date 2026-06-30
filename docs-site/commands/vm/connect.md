@@ -91,7 +91,7 @@ azlin connect ml-training
 azlin connect 20.123.45.67
 
 # Useful for temporary access or non-azlin VMs
-azlin connect 10.0.1.5 --user ubuntu --key ~/.ssh/custom_key
+azlin connect 10.0.1.5 --user azureuser --key ~/.ssh/custom_key
 ```
 
 ### Custom Tmux Sessions
@@ -458,7 +458,7 @@ fi
 
 # Parallel command execution
 for vm in vm1 vm2 vm3; do
-    azlin connect $vm -- apt update &
+    azlin connect $vm -- tdnf update &
 done
 wait
 ```

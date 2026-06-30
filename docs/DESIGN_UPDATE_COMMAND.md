@@ -38,8 +38,8 @@ The `azlin update` command updates all development tools installed on an azlin V
      - Returns summary of all update attempts
 
    - `_update_system_packages() -> UpdateResult`
-     - Updates apt packages
-     - Command: `sudo apt update && sudo apt upgrade -y`
+     - Updates Azure Linux 4.0 packages with tdnf
+     - Command: `sudo tdnf update -y`
 
    - `_update_azure_cli() -> UpdateResult`
      - Updates Azure CLI
@@ -96,12 +96,12 @@ The `azlin update` command updates all development tools installed on an azlin V
 
 Updates run **sequentially** because:
 1. Some updates may trigger system restarts or reload PATH
-2. apt updates should complete before other package managers
+2. tdnf updates should complete before other package managers
 3. Easier to troubleshoot failures
 4. Lower risk of resource contention
 
 **Order**:
-1. System packages (apt) - Foundation, affects other tools
+1. System packages (tdnf) - Foundation, affects other tools
 2. Azure CLI - Independent
 3. GitHub CLI - Independent
 4. npm - Required before npm packages

@@ -54,8 +54,11 @@ pub fn reconnect_prompt(attempt: u32, max_retries: u32) -> String {
 pub fn format_os_display(os_offer: Option<&str>, os_type: &azlin_core::models::OsType) -> String {
     if let Some(offer) = os_offer {
         let lower = offer.to_lowercase();
-        if lower.contains("ubuntu") {
-            return format_ubuntu_offer(offer);
+        if lower.contains("azure-linux-4")
+            || lower.contains("microsoftcblmariner")
+            || lower.contains("cbl-mariner")
+        {
+            return format_azure_linux_offer(offer);
         }
         if lower.contains("debian") {
             return "Debian".to_string();
@@ -86,60 +89,9 @@ pub fn format_os_display(os_offer: Option<&str>, os_type: &azlin_core::models::O
     }
 }
 
-/// Parse Ubuntu offer strings into human-readable format.
-/// Handles multiple Azure offer formats:
-///   "ubuntu-24_04-lts" -> "Ubuntu 24.04 LTS"
-///   "ubuntu-25_10" -> "Ubuntu 25.10"
-///   "0001-com-ubuntu-server-jammy" -> "Ubuntu 22.04 LTS"
-fn format_ubuntu_offer(offer: &str) -> String {
-    let lower = offer.to_lowercase();
-
-    // Try version format: ubuntu-XX_YY[-lts]
-    // Strip common prefixes
-    let stripped = lower
-        .strip_prefix("ubuntu-")
-        .or_else(|| {
-            // Handle 0001-com-ubuntu-* format
-            lower.find("ubuntu-").map(|i| &lower[i + 7..])
-        })
-        .unwrap_or(&lower);
-
-    let is_lts = stripped.contains("lts");
-    let version_part = stripped
-        .replace("-lts", "")
-        .replace("_lts", "")
-        .replace("-gen1", "")
-        .replace("-gen2", "");
-
-    // Parse XX_YY -> XX.YY
-    if let Some((major, minor)) = version_part.split_once('_') {
-        if major.chars().all(|c| c.is_numeric()) {
-            let suffix = if is_lts { " LTS" } else { "" };
-            return format!("Ubuntu {}.{}{}", major, minor, suffix);
-        }
-    }
-
-    // Codename fallback — search the ENTIRE offer string for codenames
-    if lower.contains("plucky") {
-        return "Ubuntu 25.04".to_string();
-    }
-    if lower.contains("oracular") {
-        return "Ubuntu 24.10".to_string();
-    }
-    if lower.contains("noble") {
-        return "Ubuntu 24.04 LTS".to_string();
-    }
-    if lower.contains("jammy") {
-        return "Ubuntu 22.04 LTS".to_string();
-    }
-    if lower.contains("focal") {
-        return "Ubuntu 20.04 LTS".to_string();
-    }
-    if lower.contains("bionic") {
-        return "Ubuntu 18.04 LTS".to_string();
-    }
-
-    format!("Ubuntu ({})", offer)
+/// Parse Azure Linux 4.0 offer strings into human-readable format.
+fn format_azure_linux_offer(_offer: &str) -> String {
+    "Azure Linux 4.0".to_string()
 }
 
 /// Format IP display with annotation (Pub/Bast/N/A).

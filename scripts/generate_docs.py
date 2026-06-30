@@ -92,7 +92,7 @@ azlin new --name myproject
 
 azlin will:
 
-1. ✓ Create an Ubuntu 26.04 LTS VM
+1. ✓ Create an Azure Linux 4.0 VM
 2. ✓ Install 12 development tools
 3. ✓ Configure SSH access
 4. ✓ Start tmux session
@@ -196,7 +196,7 @@ This guide walks you through creating your first Azure VM with azlin in detail.
 
 By the end of this tutorial, you'll have:
 
-- A running Ubuntu 26.04 LTS VM in Azure
+- A running Azure Linux 4.0 VM in Azure
 - 12 development tools pre-installed
 - SSH access configured
 - A persistent tmux session
@@ -279,7 +279,7 @@ You'll see:
 ✓ SSH configured
 → Connecting to my-first-vm...
 
-Welcome to Ubuntu 26.04 LTS
+Welcome to Azure Linux 4.0
 
 azureuser@my-first-vm:~$
 ```
@@ -491,7 +491,7 @@ Understand the core concepts behind azlin to use it effectively.
 
 ### Virtual Machines (VMs)
 
-azlin creates **Ubuntu 26.04 LTS** virtual machines in Azure with development tools pre-installed.
+azlin creates **Azure Linux 4.0** virtual machines in Azure with development tools pre-installed.
 
 **Key characteristics:**
 

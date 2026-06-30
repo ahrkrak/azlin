@@ -1,4 +1,4 @@
-# azlin - Azure Ubuntu VM Provisioning CLI
+# azlin - Azure Linux VM Provisioning CLI
 
 **One command to create a fully-equipped development VM on Azure**
 
@@ -8,7 +8,7 @@
 
     ---
 
-    Get started in 5 minutes with a fully configured Ubuntu development VM
+    Get started in 5 minutes with a fully configured Azure Linux 4.0 development VM
 
     [:octicons-arrow-right-24: Getting Started](getting-started/quickstart.md)
 
@@ -40,10 +40,10 @@
 
 ## What is azlin?
 
-azlin automates the tedious process of setting up Azure Ubuntu VMs for development. Written in Rust for blazing-fast startup (75-85x faster than the original Python implementation), it provisions a fully configured VM in one command:
+azlin automates the tedious process of setting up Azure Linux 4.0 VMs for development. Written in Rust for blazing-fast startup (75-85x faster than the original Python implementation), it provisions a fully configured VM in one command:
 
 1. Authenticates with Azure
-2. Provisions an Ubuntu 26.04 LTS VM
+2. Provisions an Azure Linux 4.0 VM
 3. Installs 12 essential development tools
 4. Sets up SSH with key-based authentication
 5. Starts a persistent tmux session

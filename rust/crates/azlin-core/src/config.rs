@@ -109,7 +109,7 @@ pub struct AzlinConfig {
     pub vm_storage: Option<HashMap<String, String>>,
     pub default_nfs_storage: Option<String>,
     pub github_runner_fleets: Option<HashMap<String, serde_json::Value>>,
-    /// Default VM OS image URN (e.g. "Canonical:ubuntu-26_04-lts:server:latest").
+    /// Default VM OS image URN (e.g. "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest").
     /// When None, falls back to VmImage::default().
     pub default_vm_image: Option<String>,
     pub ssh_auto_sync_keys: bool,
@@ -1035,37 +1035,37 @@ mod tests {
         let toml_str = r#"
             default_region = "westus2"
             default_vm_size = "Standard_E16as_v5"
-            default_vm_image = "Canonical:ubuntu-24_04-lts:server:latest"
+            default_vm_image = "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
         "#;
         let config: AzlinConfig = toml::from_str(toml_str).unwrap();
         assert_eq!(
             config.default_vm_image,
-            Some("Canonical:ubuntu-24_04-lts:server:latest".to_string())
+            Some("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest".to_string())
         );
     }
 
     #[test]
     fn test_config_roundtrip_with_default_vm_image() {
         let config = AzlinConfig {
-            default_vm_image: Some("Canonical:ubuntu-24_04-lts:server:latest".to_string()),
+            default_vm_image: Some("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest".to_string()),
             ..Default::default()
         };
         let serialized = toml::to_string_pretty(&config).unwrap();
         let deserialized: AzlinConfig = toml::from_str(&serialized).unwrap();
         assert_eq!(
             deserialized.default_vm_image,
-            Some("Canonical:ubuntu-24_04-lts:server:latest".to_string())
+            Some("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest".to_string())
         );
     }
 
     #[test]
     fn test_validate_field_default_vm_image_full_urn() {
         let result =
-            AzlinConfig::validate_field("default_vm_image", "Canonical:ubuntu-25_10:server:latest");
+            AzlinConfig::validate_field("default_vm_image", "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest");
         assert!(result.is_ok(), "should accept valid URN");
         assert_eq!(
             result.unwrap(),
-            serde_json::Value::String("Canonical:ubuntu-25_10:server:latest".to_string())
+            serde_json::Value::String("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest".to_string())
         );
     }
 
@@ -1076,7 +1076,7 @@ mod tests {
         // Should store the resolved full URN
         assert_eq!(
             result.unwrap(),
-            serde_json::Value::String("Canonical:ubuntu-24_04-lts:server:latest".to_string())
+            serde_json::Value::String("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest".to_string())
         );
     }
 
@@ -1092,7 +1092,7 @@ mod tests {
             "default_vm_image",
             "MicrosoftWindowsServer:WindowsServer:2022:latest",
         );
-        assert!(result.is_err(), "should reject non-Canonical publisher");
+        assert!(result.is_err(), "should reject non-MicrosoftCBLMariner publisher");
     }
 
     #[test]
@@ -1120,7 +1120,7 @@ mod tests {
         let (toml_str, _) = simulate_set_field(
             &config,
             "default_vm_image",
-            "Canonical:ubuntu-25_10:server:latest",
+            "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest",
         );
         assert!(
             toml_str.contains("default_vm_image"),

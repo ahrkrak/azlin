@@ -55,7 +55,7 @@ azlin storage mount local --mount-point PATH
 
 **Requirements:**
 - Linux or macOS only
-- NFS client installed (`nfs-common` on Ubuntu, built-in on macOS)
+- NFS client installed (`nfs-common` on Azure Linux 4.0, built-in on macOS)
 - sudo access for mounting
 
 ## Examples

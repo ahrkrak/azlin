@@ -1,4 +1,4 @@
-# azlin - Azure Ubuntu VM Provisioning CLI
+# azlin - Azure Linux VM Provisioning CLI
 
 [![Latest Release](https://img.shields.io/github/v/release/rysweet/azlin?label=latest&sort=semver)](https://github.com/rysweet/azlin/releases/latest)
 
@@ -67,10 +67,10 @@ azlin health
 
 ## What is azlin?
 
-azlin automates the tedious process of setting up Azure Ubuntu VMs for development. In one command, it:
+azlin automates the tedious process of setting up Azure Linux 4.0 VMs for development. In one command, it:
 
 1. Authenticates with Azure
-2. Provisions an Ubuntu 26.04 LTS VM
+2. Provisions an Azure Linux 4.0 VM
 3. Installs 12 essential development tools
 4. Creates a separate 100GB Premium SSD for /home (persistent storage), with optional /tmp disk
 5. Sets up SSH with key-based authentication
@@ -117,12 +117,12 @@ azlin logs my-vm --type all           # View all log types (snapshot)
 azlin logs my-vm --lines 50           # View last 50 lines
 ```
 
-### Ubuntu Version Selection
-VMs default to **Ubuntu 26.04 LTS**. Specify a different Ubuntu version when creating VMs:
+### Azure Linux 4.0 Version Selection
+VMs default to **Azure Linux 4.0**. Specify a different Azure Linux 4.0 version when creating VMs:
 ```bash
-azlin new --os 26.04         # Ubuntu 26.04 LTS (default)
-azlin new --os 25.10         # Ubuntu 25.10
-azlin new --os 24.04-lts     # Ubuntu 24.04 LTS
+azlin new --os azurelinux4         # Azure Linux 4.0 (default)
+azlin new --os azurelinux4         # Azure Linux 4.0
+azlin new --os azurelinux4     # Azure Linux 4.0
 ```
 
 ### Separate /tmp Disk Support
@@ -187,7 +187,7 @@ grep '\[AZLIN\]' /var/log/cloud-init-output.log
 # [AZLIN] Provisioning complete
 ```
 
-**Note**: Actual versions depend on Ubuntu repository state and upstream
+**Note**: Actual versions depend on Azure Linux 4.0 repository state and upstream
 installers at provision time. npm is bundled with Node.js 24.x LTS (installed
 via NodeSource), not installed separately.
 
@@ -448,7 +448,7 @@ These options are available on nearly all commands that interact with Azure reso
 
 #### `azlin new` - Provision a new VM
 
-Create a fresh Azure Ubuntu VM with all development tools pre-installed.
+Create a fresh Azure Linux 4.0 VM with all development tools pre-installed.
 
 **Aliases**: `azlin create`
 
@@ -810,7 +810,7 @@ azlin vm update-tools my-vm --timeout 600
 ```
 
 **What gets updated**:
-- System packages (`apt-get update && apt-get upgrade`)
+- System packages (`tdnf update`)
 - Rust toolchain (`rustup update`)
 - Python package manager (`pip install --upgrade pip`)
 - Node.js package manager (`npm install -g npm`)
@@ -822,9 +822,9 @@ azlin vm update-tools my-vm --timeout 600
 
 **Performance**: Updates typically complete in 2-5 minutes depending on available updates.
 
-### `azlin os-update` - Update Ubuntu packages
+### `azlin os-update` - Update Azure Linux 4.0 packages
 
-Run system package updates on Ubuntu VMs (apt update && apt upgrade).
+Run system package updates on Azure Linux 4.0 VMs (`tdnf update`).
 
 ```bash
 # Update OS packages by session name
@@ -838,12 +838,12 @@ azlin os-update my-vm --timeout 600
 ```
 
 **What happens**:
-1. Runs `sudo apt update` to refresh package lists
-2. Runs `sudo apt upgrade -y` to install available updates
+1. Runs `sudo tdnf update` to refresh metadata and apply available updates
+2. Uses non-interactive mode to install available updates
 3. Non-interactive mode (auto-accepts prompts)
 
 **Use cases**:
-- Apply Ubuntu security patches
+- Apply Azure Linux 4.0 security patches
 - Keep system packages current
 - Maintenance before important deployments
 - Regular maintenance schedule
@@ -2286,7 +2286,7 @@ azlin ps  # Check for resource-heavy processes
 | `azlin kill` | Delete VM | `azlin kill my-vm` |
 | `azlin destroy` | Advanced delete | `azlin destroy --dry-run` |
 | `azlin vm update-tools` | Update dev tools | `azlin vm update-tools my-vm` |
-| `azlin os-update` | Update Ubuntu packages | `azlin os-update my-vm` |
+| `azlin os-update` | Update Azure Linux 4.0 packages | `azlin os-update my-vm` |
 | `azlin status` | Detailed status | `azlin status` |
 | `azlin top` | Real-time monitor | `azlin top` |
 | `azlin prune` | Auto cleanup | `azlin prune --dry-run` |

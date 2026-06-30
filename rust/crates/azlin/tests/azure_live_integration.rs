@@ -130,7 +130,7 @@ fn test_live_list_os_detection() {
     }
     let (stdout, _, code) = run_azlin(&["list", "--no-tmux", "--resource-group", RG]);
     assert_eq!(code, 0);
-    assert!(stdout.contains("Ubuntu"), "should detect Ubuntu OS");
+    assert!(stdout.contains("Azure Linux 4.0"), "should detect Azure Linux 4.0 OS");
 }
 
 #[test]

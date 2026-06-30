@@ -260,7 +260,7 @@ pub enum Commands {
         #[arg(long)]
         tmp_disk_size: Option<u32>,
 
-        /// OS image (e.g., 26.04, 24.04-lts, Ubuntu2604, or full URN like Canonical:ubuntu-26_04-lts:server:latest; default: Ubuntu 26.04 LTS)
+        /// OS image (e.g., azurelinux4, azure-linux-4, or full URN like MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest; default: Azure Linux 4.0)
         #[arg(long)]
         os: Option<String>,
     },
@@ -2905,7 +2905,7 @@ mod tests {
 
     #[test]
     fn test_fleet_run() {
-        let cli = Cli::parse_from(["azlin", "fleet", "run", "apt update", "--all", "--dry-run"]);
+        let cli = Cli::parse_from(["azlin", "fleet", "run", "tdnf update", "--all", "--dry-run"]);
         if let Commands::Fleet {
             action:
                 FleetAction::Run {
@@ -2916,7 +2916,7 @@ mod tests {
                 },
         } = cli.command
         {
-            assert_eq!(command, "apt update");
+            assert_eq!(command, "tdnf update");
             assert!(all);
             assert!(dry_run);
         } else {

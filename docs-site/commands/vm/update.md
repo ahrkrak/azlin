@@ -64,7 +64,7 @@ azlin vm update-tools my-vm --rg my-resource-group
 
 ## What Gets Updated
 
-- **System packages**: `apt-get update && apt-get upgrade`
+- **System packages**: `tdnf update`
 - **Rust**: `rustup update` (rustc, cargo)
 - **Python**: `pip install --upgrade pip`
 - **Node.js**: `npm install -g npm`

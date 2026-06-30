@@ -159,9 +159,9 @@ fn test_create_vm_via_mock() {
         region: "eastus".to_string(),
         vm_size: "Standard_D4s_v3".to_string(),
         image: azlin_core::models::VmImage {
-            publisher: "Canonical".to_string(),
-            offer: "0001-com-ubuntu-server-jammy".to_string(),
-            sku: "22_04-lts-gen2".to_string(),
+            publisher: "MicrosoftCBLMariner".to_string(),
+            offer: "azure-linux-4".to_string(),
+            sku: "azure-linux-4-gen2".to_string(),
             version: "latest".to_string(),
         },
         admin_username: "azureuser".to_string(),

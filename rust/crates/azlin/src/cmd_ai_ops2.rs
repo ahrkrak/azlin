@@ -121,7 +121,7 @@ pub(crate) fn handle_doit_cleanup(
 
 pub(crate) fn handle_doit_examples() {
     println!("Example doit requests:");
-    println!("  azlin doit deploy \"Create a 2-VM cluster with Ubuntu 24.04\"");
+    println!("  azlin doit deploy \"Create a 2-VM cluster with Azure Linux 4.0\"");
     println!("  azlin doit deploy \"Set up a dev VM with 4 cores and 16GB RAM\"");
     println!("  azlin doit deploy \"Scale my fleet to 5 VMs in eastus2\"");
     println!("  azlin doit deploy --dry-run \"Delete all stopped VMs\"");

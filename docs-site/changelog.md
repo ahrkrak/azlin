@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`azlin logs`** - VM log viewer with real-time streaming
 - **VM Health Dashboard** with Four Golden Signals (latency, traffic, errors, saturation)
-- **`--os` option** for Ubuntu version selection (e.g., `--os 25.10`)
+- **`--os` option** for Azure Linux 4.0 version selection (e.g., `--os azurelinux4`)
 - **Separate /tmp disk support** via `--tmp-disk-size` with hardened cloud-init (retry loop, subshell isolation, orphan cleanup)
 - **Compound VM:Session naming** - address VMs with `hostname:session_name` syntax
 - **OS icon and distro column** in `azlin list`
@@ -67,9 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 - Fix WSL SSH config sync for `azlin code`
-- Auto-remediate tmux socket dir on Ubuntu 25.10 VMs
+- Auto-remediate tmux socket dir on Azure Linux 4.0 VMs
 - Fix cloud-init runcmd YAML parsing failure
-- Make cloud-init work on Ubuntu 25.10 for npm and ripgrep
+- Make cloud-init work on Azure Linux 4.0 for npm and ripgrep
 - Always measure SSH latency when `--with-latency` is requested
 - Fix `azlin list -q` not showing quota when VMs are cached
 

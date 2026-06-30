@@ -1,93 +1,57 @@
 // ── format_os_display tests ─────────────────────────────────────
 
 #[test]
-fn test_format_os_display_ubuntu_version_lts() {
+fn test_format_os_display_azure_linux() {
     let result = crate::display_helpers::format_os_display(
-        Some("ubuntu-24_04-lts"),
+        Some("azure-linux-4"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 24.04 LTS");
+    assert_eq!(result, "Azure Linux 4.0");
 }
 
 #[test]
-fn test_format_os_display_ubuntu_version_no_lts() {
+fn test_format_os_display_azure_linux_gen2() {
     let result = crate::display_helpers::format_os_display(
-        Some("ubuntu-25_10"),
+        Some("azure-linux-4-gen2"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 25.10");
+    assert_eq!(result, "Azure Linux 4.0");
 }
 
 #[test]
-fn test_format_os_display_ubuntu_com_prefix_jammy() {
+fn test_format_os_display_microsoftcblmariner() {
     let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-jammy"),
+        Some("MicrosoftCBLMariner"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 22.04 LTS");
+    assert_eq!(result, "Azure Linux 4.0");
 }
 
 #[test]
-fn test_format_os_display_ubuntu_com_prefix_focal() {
+fn test_format_os_display_cbl_mariner_alias() {
     let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-focal"),
+        Some("cbl-mariner-2"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 20.04 LTS");
+    assert_eq!(result, "Azure Linux 4.0");
 }
 
 #[test]
-fn test_format_os_display_ubuntu_noble_codename() {
+fn test_format_os_display_azure_linux_variant() {
     let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-noble"),
+        Some("azure-linux-4-gen2"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 24.04 LTS");
+    assert_eq!(result, "Azure Linux 4.0");
 }
 
 #[test]
-fn test_format_os_display_ubuntu_bionic_codename() {
+fn test_format_os_display_unknown_offer_falls_back() {
     let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-bionic"),
+        Some("CustomAzureImage"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(result, "Ubuntu 18.04 LTS");
-}
-
-#[test]
-fn test_format_os_display_ubuntu_oracular() {
-    let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-oracular"),
-        &azlin_core::models::OsType::Linux,
-    );
-    assert_eq!(result, "Ubuntu 24.10");
-}
-
-#[test]
-fn test_format_os_display_ubuntu_plucky() {
-    let result = crate::display_helpers::format_os_display(
-        Some("0001-com-ubuntu-server-plucky"),
-        &azlin_core::models::OsType::Linux,
-    );
-    assert_eq!(result, "Ubuntu 25.04");
-}
-
-#[test]
-fn test_format_os_display_ubuntu_gen2_suffix() {
-    let result = crate::display_helpers::format_os_display(
-        Some("ubuntu-24_04-lts-gen2"),
-        &azlin_core::models::OsType::Linux,
-    );
-    assert_eq!(result, "Ubuntu 24.04 LTS");
-}
-
-#[test]
-fn test_format_os_display_ubuntu_unknown_falls_back() {
-    let result = crate::display_helpers::format_os_display(
-        Some("UbuntuWeird"),
-        &azlin_core::models::OsType::Linux,
-    );
-    assert_eq!(result, "Ubuntu (UbuntuWeird)");
+    assert_eq!(result, "CustomAzureImage");
 }
 
 #[test]

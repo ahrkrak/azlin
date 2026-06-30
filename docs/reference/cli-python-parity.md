@@ -49,7 +49,7 @@ azlin code <VM_IDENTIFIER> [OPTIONS]
 azlin code my-dev-vm
 
 # Connect as a different user with a specific key
-azlin code my-dev-vm --user ubuntu --key ~/.ssh/custom_key
+azlin code my-dev-vm --user azureuser --key ~/.ssh/custom_key
 
 # Open a specific workspace directory, skip extensions
 azlin code my-dev-vm --workspace /home/azureuser/projects --no-extensions

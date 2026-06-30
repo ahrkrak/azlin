@@ -153,9 +153,9 @@ This document catalogs similar projects and tools in the cloud VM provisioning a
 - **URL**: https://multipass.run/
 - **GitHub**: https://github.com/canonical/multipass
 - **Language**: C++
-- **Focus**: Lightweight Ubuntu VMs on desktop
+- **Focus**: Lightweight Azure Linux 4.0 VMs on desktop
 - **Key Features**:
-  - Fast Ubuntu VM creation (seconds)
+  - Fast Azure Linux 4.0 VM creation (seconds)
   - Native hypervisor support (Hyper-V, VirtualBox, QEMU, HyperKit)
   - Cloud-init support
   - Simple CLI

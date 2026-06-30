@@ -58,7 +58,7 @@ Quickly provision new VMs from your iPhone.
 - **Name**: VM hostname (must be unique in resource group)
 - **Resource Group**: Existing or create new
 - **Size**: VM size picker (common sizes suggested)
-- **Image**: OS image (Ubuntu 22.04, 24.04, Debian 12)
+- **Image**: OS image (Azure Linux 4.0, 24.04, Debian 12)
 - **Region**: Azure region selector
 - **Disk Size**: OS disk size in GB (default: 30GB)
 - **Authentication**: SSH key or password
@@ -80,7 +80,7 @@ Bottom shows estimated cost: "$0.096/hour | $2.30/day"
 2. Name: "mobile-dev-01"
 3. Resource Group: "mobile-rg" (new)
 4. Size: Standard_D2s_v3 ($0.096/hour)
-5. Image: Ubuntu 22.04
+5. Image: Azure Linux 4.0
 6. Region: eastus
 7. Network: Create new VNet with Bastion
 8. Authentication: Upload SSH key from iCloud

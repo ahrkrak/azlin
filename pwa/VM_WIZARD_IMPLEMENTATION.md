@@ -32,7 +32,7 @@ Located in: `src/components/VmWizard/steps/`
   - Displays specs: vCPUs, RAM, storage
 
 - **ImageStep.tsx** - Operating system selection
-  - Curated OS presets (Ubuntu 22.04/24.04, Debian 12, RHEL 9)
+  - Curated OS presets (Azure Linux 4.0/24.04, Debian 12, RHEL 9)
   - LTS versions recommended
   - Clear descriptions and use cases
 

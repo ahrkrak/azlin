@@ -4,18 +4,18 @@ Choose the operating system image for new VMs via the `--os` flag or persistent 
 
 ## Overview
 
-By default, `azlin new` provisions VMs with Ubuntu 26.04 LTS. You can override this per-command with `--os` or set a persistent default with `azlin config set default_vm_image`.
+By default, `azlin new` provisions VMs with Azure Linux 4.0. You can override this per-command with `--os` or set a persistent default with `azlin config set default_vm_image`.
 
 ## Quick Start
 
 ```bash
-# Use Ubuntu 24.04 LTS for this VM
-azlin new --name my-vm --os 24.04-lts
+# Use Azure Linux 4.0 for this VM
+azlin new --name my-vm --os azurelinux4
 
 # Set a persistent default
-azlin config set default_vm_image "24.04-lts"
+azlin config set default_vm_image "azurelinux4"
 
-# Now all new VMs use Ubuntu 24.04 LTS
+# Now all new VMs use Azure Linux 4.0
 azlin new --name my-vm
 ```
 
@@ -29,32 +29,26 @@ azlin new --os <IMAGE_SPEC> [OTHER_OPTIONS]
 
 ### Shorthands
 
-Convenient aliases for common Ubuntu versions:
+Convenient aliases for the Azure Linux 4.0 image:
 
 | Shorthand | Resolved Image URN |
 |-----------|-------------------|
-| `26.04-lts` | `Canonical:ubuntu-26_04-lts:server:latest` |
-| `26.04` | `Canonical:ubuntu-26_04-lts:server:latest` |
-| `25.10` | `Canonical:ubuntu-25_10:server:latest` |
-| `24.10` | `Canonical:ubuntu-24_10:server:latest` |
-| `24.04-lts` | `Canonical:ubuntu-24_04-lts:server:latest` |
-| `24.04` | `Canonical:ubuntu-24_04-lts:server:latest` |
-| `22.04-lts` | `Canonical:ubuntu-22_04-lts:server:latest` |
-| `22.04` | `Canonical:ubuntu-22_04-lts:server:latest` |
-| `20.04-lts` | `Canonical:ubuntu-20_04-lts:server:latest` |
-| `20.04` | `Canonical:ubuntu-20_04-lts:server:latest` |
+| `azurelinux4` | `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest` |
+| `azure-linux-4` | `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest` |
+| `azurelinux` | `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest` |
+| `4.0` | `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest` |
 
-Bare version numbers (e.g., `24.04`) resolve to the LTS variant when one exists.
+All supported shorthands resolve to the Azure Linux 4.0 Gen2 image.
 
 ### Full Image URN
 
 Azure image URNs in the format `Publisher:Offer:SKU:Version`:
 
 ```bash
-azlin new --os "Canonical:ubuntu-24_04-lts:server:latest"
+azlin new --os "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 ```
 
-Only images from the `Canonical` publisher are accepted. Non-Canonical URNs are rejected because azlin's cloud-init provisioning assumes an Ubuntu base image with `apt`.
+Only images from the `MicrosoftCBLMariner` publisher are accepted. Non-MicrosoftCBLMariner URNs are rejected because azlin's provisioning defaults target Azure Linux 4.0 and `tdnf`.
 
 ## Configuration
 
@@ -62,15 +56,15 @@ Only images from the `Canonical` publisher are accepted. Non-Canonical URNs are 
 
 ```bash
 # Set default using a shorthand
-azlin config set default_vm_image "24.04-lts"
+azlin config set default_vm_image "azurelinux4"
 
 # Set default using a full URN
-azlin config set default_vm_image "Canonical:ubuntu-24_04-lts:server:latest"
+azlin config set default_vm_image "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 
 # View current default
 azlin config get default_vm_image
 
-# Remove default (revert to built-in Ubuntu 26.04 LTS)
+# Remove default (revert to built-in Azure Linux 4.0)
 azlin config unset default_vm_image
 ```
 
@@ -82,7 +76,7 @@ The value is validated on `set` — invalid shorthands or malformed URNs are rej
 # ~/.azlin/config.toml
 
 # Default OS image for new VMs (full URN or shorthand)
-default_vm_image = "Canonical:ubuntu-24_04-lts:server:latest"
+default_vm_image = "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 
 # Other defaults
 default_region = "westus2"
@@ -96,38 +90,38 @@ When creating a VM, the OS image is resolved in this order (highest priority fir
 
 1. **`--os` flag** — per-command override
 2. **`default_vm_image` config** — persistent default in `~/.azlin/config.toml`
-3. **Built-in default** — Ubuntu 26.04 LTS (`Canonical:ubuntu-26_04-lts:server:latest`)
+3. **Built-in default** — Azure Linux 4.0 (`MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest`)
 
 ```bash
 # Uses --os flag (highest priority)
-azlin new --os 22.04-lts
+azlin new --os azurelinux4
 
 # Uses config default_vm_image (if set)
 azlin new
 
-# Uses built-in Ubuntu 26.04 LTS (if no config set and no --os)
+# Uses built-in Azure Linux 4.0 (if no config set and no --os)
 azlin new
 ```
 
 ## Examples
 
-### Create a VM with Ubuntu 24.04 LTS
+### Create a VM with Azure Linux 4.0
 
 ```bash
-azlin new --name dev-vm --os 24.04-lts
+azlin new --name dev-vm --os azurelinux4
 ```
 
 ### Create a pool with a specific image
 
 ```bash
-azlin new --pool 3 --name build-fleet --os 22.04-lts
+azlin new --pool 3 --name build-fleet --os azurelinux4
 ```
 
 ### Set team-wide default via config
 
 ```bash
 # All team members run this once
-azlin config set default_vm_image "24.04-lts"
+azlin config set default_vm_image "azurelinux4"
 
 # Then just use azlin new normally
 azlin new --name my-vm
@@ -136,23 +130,23 @@ azlin new --name my-vm
 ### Override config default for one VM
 
 ```bash
-# Config says 24.04-lts, but you need 25.10 for testing
-azlin new --name test-vm --os 25.10
+# Config says Azure Linux 4.0, but you need an explicit override for this VM
+azlin new --name test-vm --os azurelinux4
 ```
 
 ### Use full URN for a specific image version
 
 ```bash
-azlin new --name pinned-vm --os "Canonical:ubuntu-24_04-lts:server:24.04.202401010"
+azlin new --name pinned-vm --os "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 ```
 
 ## Input Validation
 
 Image specifications are validated for safety:
 
-- **Shorthands** must match a known Ubuntu version
+- **Shorthands** must match a supported Azure Linux 4.0 alias
 - **Full URNs** must have exactly 4 colon-separated segments
-- **Publisher** must be `Canonical` (non-Ubuntu images are rejected)
+- **Publisher** must be `MicrosoftCBLMariner` (non-Azure Linux 4.0 images are rejected)
 - **Segments** may only contain `[a-zA-Z0-9._-]` characters
 - **Shell metacharacters**, newlines, and null bytes are rejected
 
@@ -160,13 +154,13 @@ Invalid input produces a clear error:
 
 ```
 $ azlin new --os "NotAPublisher:image:sku:latest"
-Error: Only Canonical publisher is supported for VM images, got "NotAPublisher".
-  Use a URN like 'Canonical:ubuntu-26_04-lts:server:latest'
+Error: Only MicrosoftCBLMariner publisher is supported for VM images, got "NotAPublisher".
+  Use a URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'
 
 $ azlin new --os "not-a-version"
 Error: Unknown image shorthand "not-a-version". Supported shorthands:
-  26.04-lts, 26.04, 25.10, 24.10, 24.04-lts, 24.04, 22.04-lts, 22.04, 20.04-lts, 20.04.
-  Or use a full URN like 'Canonical:ubuntu-26_04-lts:server:latest'
+  azurelinux4, azure-linux-4, azurelinux, 4.0.
+  Or use a full URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'
 ```
 
 ## Troubleshooting
@@ -175,9 +169,9 @@ Error: Unknown image shorthand "not-a-version". Supported shorthands:
 
 You used a shorthand that isn't recognized. Check the [shorthands table](#shorthands) or use a full URN.
 
-### "Only Canonical (Ubuntu) images are supported"
+### "Only MicrosoftCBLMariner Azure Linux 4.0 images are supported"
 
-azlin requires Ubuntu because its cloud-init setup uses `apt`. Use a Canonical image URN or a recognized shorthand.
+azlin requires Azure Linux 4.0 because its provisioning defaults use `tdnf`. Use a MicrosoftCBLMariner image URN or a recognized shorthand.
 
 ### Config default not taking effect
 

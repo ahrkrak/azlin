@@ -41,7 +41,7 @@ pub struct VmInfo {
     pub power_state: PowerState,
     pub provisioning_state: ProvisioningState,
     pub os_type: OsType,
-    /// Image offer string from Azure (e.g., "ubuntu-25_10", "WindowsServer").
+    /// Image offer string from Azure (e.g., "azure-linux-4", "WindowsServer").
     /// Used for OS distro display in list output.
     pub os_offer: Option<String>,
     pub public_ip: Option<String>,
@@ -227,9 +227,9 @@ pub struct VmImage {
 impl Default for VmImage {
     fn default() -> Self {
         Self {
-            publisher: "Canonical".into(),
-            offer: "ubuntu-26_04-lts".into(),
-            sku: "server".into(),
+            publisher: "MicrosoftCBLMariner".into(),
+            offer: "azure-linux-4".into(),
+            sku: "azure-linux-4-gen2".into(),
             version: "latest".into(),
         }
     }
@@ -249,10 +249,10 @@ impl VmImage {
     /// Parse an image specification into a `VmImage`.
     ///
     /// Accepts:
-    /// - Full URN: `Canonical:ubuntu-25_10:server:latest` (must be Canonical publisher)
-    /// - Shorthands: `26.04`, `25.10`, `24.04-lts`, `ubuntu-26.04`, `ubuntu-24.04-lts`
+    /// - Full URN: `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest`
+    /// - Shorthands: `azurelinux4`, `azure-linux-4`, `azurelinux`, `4.0`
     ///
-    /// Returns an error for empty/whitespace input, shell metacharacters, non-Canonical
+    /// Returns an error for empty/whitespace input, shell metacharacters, non-MicrosoftCBLMariner
     /// publishers, malformed URNs, or unrecognized shorthands.
     pub fn from_image_spec(spec: &str) -> Result<Self, String> {
         let spec = spec.trim();
@@ -266,7 +266,7 @@ impl VmImage {
         if spec.as_bytes().iter().any(|b| FORBIDDEN.contains(b)) {
             return Err(format!(
                 "Image spec contains invalid characters: {:?}. Use a URN like \
-                 'Canonical:ubuntu-25_10:server:latest' or shorthand like '25.10'",
+                'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest' or shorthand like 'azurelinux4'",
                 spec
             ));
         }
@@ -280,7 +280,7 @@ impl VmImage {
         Self::resolve_shorthand(spec)
     }
 
-    /// Parse a 4-part colon-delimited URN, restricted to Canonical publisher.
+    /// Parse a 4-part colon-delimited URN, restricted to MicrosoftCBLMariner publisher.
     fn parse_urn(urn: &str) -> Result<Self, String> {
         // Use splitn(5) to detect >4 parts without allocating a Vec.
         let mut it = urn.splitn(5, ':');
@@ -313,11 +313,11 @@ impl VmImage {
             }
         }
 
-        // Restrict to Canonical publisher
-        if parts[0] != "Canonical" {
+        // Restrict to MicrosoftCBLMariner publisher
+        if parts[0] != "MicrosoftCBLMariner" {
             return Err(format!(
-                "Only Canonical publisher is supported for VM images, got {:?}. \
-                 Use a URN like 'Canonical:ubuntu-25_10:server:latest'",
+                "Only MicrosoftCBLMariner publisher is supported for VM images, got {:?}. \
+                 Use a URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'",
                 parts[0]
             ));
         }
@@ -330,41 +330,20 @@ impl VmImage {
         })
     }
 
-    /// Resolve a shorthand like "25.10" or "ubuntu-24.04-lts" to a full VmImage.
+    /// Resolve a shorthand like "azurelinux4" to a full VmImage.
     fn resolve_shorthand(spec: &str) -> Result<Self, String> {
-        // Normalize to lowercase for case-insensitive prefix matching
-        let lower = spec.to_ascii_lowercase();
-        let version_part = lower
-            .strip_prefix("ubuntu-")
-            .or_else(|| lower.strip_prefix("ubuntu"))
-            .unwrap_or(&lower);
-
-        // Map version shorthands to offer names.
-        // Accepts dotted (25.10) and dotless (2510) forms; bare versions
-        // (24.04, 2204) resolve to LTS when available.
-        let offer = match version_part {
-            "26.04-lts" | "26.04" | "2604" => "ubuntu-26_04-lts",
-            "25.10" | "2510" => "ubuntu-25_10",
-            "24.10" | "2410" => "ubuntu-24_10",
-            "24.04-lts" | "24.04" | "2404" => "ubuntu-24_04-lts",
-            "22.04-lts" | "22.04" | "2204" => "ubuntu-22_04-lts",
-            "20.04-lts" | "20.04" | "2004" => "ubuntu-20_04-lts",
-            _ => {
-                return Err(format!(
-                    "Unknown image shorthand {:?}. Supported shorthands: \
-                     26.04-lts, 26.04, 25.10, 24.10, 24.04-lts, 24.04, 22.04-lts, 22.04, 20.04-lts, 20.04. \
-                     Or use a full URN like 'Canonical:ubuntu-26_04-lts:server:latest'",
-                    spec
-                ));
+        let lower = spec.trim().to_ascii_lowercase();
+        match lower.as_str() {
+            "azurelinux4" | "azure-linux-4" | "azurelinux" | "azure-linux" | "4.0" | "40" => {
+                Ok(Self::default())
             }
-        };
-
-        Ok(Self {
-            publisher: "Canonical".to_string(),
-            offer: offer.to_string(),
-            sku: "server".to_string(),
-            version: "latest".to_string(),
-        })
+            _ => Err(format!(
+                "Unknown image shorthand {:?}. Supported shorthands: \
+                 azurelinux4, azure-linux-4, azurelinux, 4.0. \
+                 Or use a full URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'",
+                spec
+            )),
+        }
     }
 }
 
@@ -564,119 +543,78 @@ mod tests {
     #[test]
     fn test_vm_image_default() {
         let img = VmImage::default();
-        assert_eq!(img.publisher, "Canonical");
-        assert_eq!(img.offer, "ubuntu-26_04-lts");
-        assert_eq!(img.sku, "server");
+        assert_eq!(img.publisher, "MicrosoftCBLMariner");
+        assert_eq!(img.offer, "azure-linux-4");
+        assert_eq!(img.sku, "azure-linux-4-gen2");
         assert_eq!(img.version, "latest");
     }
 
     #[test]
     fn test_vm_image_display() {
         let img = VmImage::default();
-        assert_eq!(img.to_string(), "Canonical:ubuntu-26_04-lts:server:latest");
+        assert_eq!(img.to_string(), "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest");
     }
 
     // ── from_image_spec tests (TDD — will fail until implementation) ──
 
     #[test]
     fn test_from_image_spec_full_urn() {
-        let img = VmImage::from_image_spec("Canonical:ubuntu-25_10:server:latest").unwrap();
-        assert_eq!(img.publisher, "Canonical");
-        assert_eq!(img.offer, "ubuntu-25_10");
-        assert_eq!(img.sku, "server");
+        let img = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest").unwrap();
+        assert_eq!(img.publisher, "MicrosoftCBLMariner");
+        assert_eq!(img.offer, "azure-linux-4");
+        assert_eq!(img.sku, "azure-linux-4-gen2");
         assert_eq!(img.version, "latest");
     }
 
     #[test]
-    fn test_from_image_spec_shorthand_26_04_lts() {
-        for spec in ["26.04", "26.04-lts", "2604", "ubuntu-26.04"] {
+    fn test_from_image_spec_shorthand_azurelinux4() {
+        for spec in ["azurelinux4", "azure-linux-4", "azurelinux", "4.0"] {
             let img = VmImage::from_image_spec(spec).unwrap();
-            assert_eq!(img.publisher, "Canonical");
-            assert_eq!(img.offer, "ubuntu-26_04-lts");
-            assert_eq!(img.sku, "server");
+            assert_eq!(img.publisher, "MicrosoftCBLMariner");
+            assert_eq!(img.offer, "azure-linux-4");
+            assert_eq!(img.sku, "azure-linux-4-gen2");
             assert_eq!(img.version, "latest");
         }
     }
 
     #[test]
-    fn test_from_image_spec_shorthand_25_10() {
-        let img = VmImage::from_image_spec("25.10").unwrap();
-        assert_eq!(img.publisher, "Canonical");
-        assert_eq!(img.offer, "ubuntu-25_10");
-        assert_eq!(img.sku, "server");
-        assert_eq!(img.version, "latest");
-    }
-
-    #[test]
-    fn test_from_image_spec_shorthand_24_04_lts() {
-        let img = VmImage::from_image_spec("24.04-lts").unwrap();
-        assert_eq!(img.publisher, "Canonical");
-        assert_eq!(img.offer, "ubuntu-24_04-lts");
-        assert_eq!(img.sku, "server");
-        assert_eq!(img.version, "latest");
-    }
-
-    #[test]
-    fn test_from_image_spec_shorthand_ubuntu_prefix() {
-        // "ubuntu-25.10" should also resolve
-        let img = VmImage::from_image_spec("ubuntu-25.10").unwrap();
-        assert_eq!(img.publisher, "Canonical");
-        assert_eq!(img.offer, "ubuntu-25_10");
-    }
-
-    #[test]
-    fn test_from_image_spec_shorthand_dotless_ubuntu2510() {
-        // "Ubuntu2510" as documented in --os help text
-        let img = VmImage::from_image_spec("Ubuntu2510").unwrap();
-        assert_eq!(img.offer, "ubuntu-25_10");
-    }
-
-    #[test]
-    fn test_from_image_spec_shorthand_dotless_2404() {
-        let img = VmImage::from_image_spec("2404").unwrap();
-        assert_eq!(img.offer, "ubuntu-24_04-lts");
-    }
-
-    #[test]
     fn test_from_image_spec_case_insensitive_uppercase() {
-        let img = VmImage::from_image_spec("UBUNTU-25.10").unwrap();
-        assert_eq!(img.offer, "ubuntu-25_10");
+        let img = VmImage::from_image_spec("AZURELINUX4").unwrap();
+        assert_eq!(img.offer, "azure-linux-4");
     }
 
     #[test]
     fn test_from_image_spec_case_insensitive_title_dash() {
-        // "Ubuntu-25.10" — title case with dash
-        let img = VmImage::from_image_spec("Ubuntu-25.10").unwrap();
-        assert_eq!(img.offer, "ubuntu-25_10");
+        let img = VmImage::from_image_spec("Azure-Linux-4").unwrap();
+        assert_eq!(img.offer, "azure-linux-4");
     }
 
     #[test]
     fn test_from_image_spec_case_insensitive_no_dash() {
-        // "Ubuntu24.04" — title case, no dash
-        let img = VmImage::from_image_spec("Ubuntu24.04").unwrap();
-        assert_eq!(img.offer, "ubuntu-24_04-lts");
+        let img = VmImage::from_image_spec("AzureLinux").unwrap();
+        assert_eq!(img.offer, "azure-linux-4");
     }
 
     #[test]
-    fn test_from_image_spec_rejects_non_canonical_publisher() {
+    fn test_from_image_spec_rejects_non_microsoftcblmariner_publisher() {
         let result = VmImage::from_image_spec("MicrosoftWindowsServer:WindowsServer:2022:latest");
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(
-            err.contains("Canonical"),
-            "error should mention Canonical restriction, got: {err}"
+            err.contains("MicrosoftCBLMariner"),
+            "error should mention MicrosoftCBLMariner restriction, got: {err}"
         );
     }
 
     #[test]
     fn test_from_image_spec_rejects_malformed_urn_3_parts() {
-        let result = VmImage::from_image_spec("Canonical:ubuntu-25_10:server");
+        let result = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_from_image_spec_rejects_malformed_urn_5_parts() {
-        let result = VmImage::from_image_spec("Canonical:ubuntu-25_10:server:latest:extra");
+        let result = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest:extra");
         assert!(result.is_err());
     }
 
@@ -694,19 +632,25 @@ mod tests {
 
     #[test]
     fn test_from_image_spec_rejects_shell_metacharacters() {
-        let result = VmImage::from_image_spec("Canonical:ubuntu-25_10;rm -rf /:server:latest");
+        let result = VmImage::from_image_spec(
+            "MicrosoftCBLMariner:azure-linux-4;rm -rf /:azure-linux-4-gen2:latest",
+        );
         assert!(result.is_err());
     }
 
     #[test]
     fn test_from_image_spec_rejects_newlines() {
-        let result = VmImage::from_image_spec("Canonical:ubuntu-25_10\n:server:latest");
+        let result = VmImage::from_image_spec(
+            "MicrosoftCBLMariner:azure-linux-4\n:azure-linux-4-gen2:latest",
+        );
         assert!(result.is_err());
     }
 
     #[test]
     fn test_from_image_spec_rejects_null_bytes() {
-        let result = VmImage::from_image_spec("Canonical:ubuntu-25_10\0:server:latest");
+        let result = VmImage::from_image_spec(
+            "MicrosoftCBLMariner:azure-linux-4\0:azure-linux-4-gen2:latest",
+        );
         assert!(result.is_err());
     }
 
@@ -720,7 +664,7 @@ mod tests {
     fn test_from_image_spec_roundtrip_via_display() {
         // Parse a full URN, display it, re-parse — should be identical
         let original =
-            VmImage::from_image_spec("Canonical:ubuntu-24_04-lts:server:latest").unwrap();
+            VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest").unwrap();
         let displayed = original.to_string();
         let reparsed = VmImage::from_image_spec(&displayed).unwrap();
         assert_eq!(original, reparsed);

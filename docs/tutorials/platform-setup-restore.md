@@ -286,12 +286,12 @@ sed -i 's/restore_timeout = 30/restore_timeout = 90/' ~/.azlin/config.toml
 
 ## Linux Setup
 
-### Step 1: Install gnome-terminal (Ubuntu/Debian)
+### Step 1: Install gnome-terminal (Azure Linux 4.0/Debian)
 
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo apt install gnome-terminal
+sudo tdnf install gnome-terminal
 
 # Fedora/RHEL
 sudo dnf install gnome-terminal
@@ -385,7 +385,7 @@ sudo usermod -aG sudo $USER
 echo 'terminal_launcher = "linux_gnome"' >> ~/.azlin/config.toml
 
 # Or install gnome-terminal
-sudo apt install gnome-terminal
+sudo tdnf install gnome-terminal
 ```
 
 ---

@@ -2440,7 +2440,7 @@ class PSCommandExecutor:
 
 ##### `OSUpdateExecutor`
 
-Execute OS package updates (apt update && apt upgrade).
+Execute OS package updates (`tdnf update`).
 
 ```python
 class OSUpdateExecutor:
@@ -2801,7 +2801,7 @@ try:
         name="dev-template",
         vm_size="Standard_D4s_v3",
         region="westus2",
-        image="UbuntuLTS",
+        image="MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest",
         admin_username="azureuser",
         install_tools=["docker", "nodejs", "python"],
         tags={"environment": "development"}

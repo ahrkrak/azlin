@@ -1377,11 +1377,11 @@ mod tests {
             "name": "vm1",
             "storageProfile": {
                 "osDisk": { "osType": "Linux" },
-                "imageReference": { "offer": "UbuntuServer" }
+                "imageReference": { "offer": "azure-linux-4" }
             }
         });
         let vm = parse_vm_from_az_json(&json, Some("rg"));
-        assert_eq!(vm.os_offer.as_deref(), Some("UbuntuServer"));
+        assert_eq!(vm.os_offer.as_deref(), Some("azure-linux-4"));
     }
 
     #[test]

@@ -37,11 +37,11 @@ default_vm_size = "Standard_E16as_v5"
 
 # Default OS image for new VMs (shorthand or full URN)
 # Type: string (optional)
-# Default: None (falls back to Ubuntu 26.04 LTS)
+# Default: None (falls back to Azure Linux 4.0)
 # CLI Override: --os <IMAGE_SPEC>
 # Valid shorthands: 26.04-lts, 26.04, 25.10, 24.10, 24.04-lts, 24.04, 22.04-lts, 22.04, 20.04-lts, 20.04
-# Valid URN format: Canonical:<offer>:<sku>:<version>
-default_vm_image = "Canonical:ubuntu-24_04-lts:server:latest"
+# Valid URN format: MicrosoftCBLMariner:<offer>:<sku>:<version>
+default_vm_image = "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 
 # ============================================================================
 # SSH Configuration
@@ -557,10 +557,10 @@ Connect flags that override configuration (from `azlin connect --help`):
 
 | Config Option | CLI Flag | Example |
 |---------------|----------|---------|
-| `default_vm_image` | `--os <IMAGE_SPEC>` | `azlin new --os 24.04-lts` |
+| `default_vm_image` | `--os <IMAGE_SPEC>` | `azlin new --os azurelinux4` |
 | `default_resource_group` | `--resource-group <RG>` | `azlin connect vm --resource-group rg-prod` |
 | `ssh.key_path` | `--key <PATH>` | `azlin connect vm --key ~/.ssh/custom_key` |
-| `ssh.user` | `--user <USER>` | `azlin connect vm --user ubuntu` |
+| `ssh.user` | `--user <USER>` | `azlin connect vm --user azureuser` |
 | `ssh.tmux_enabled` | `--no-tmux` | `azlin connect vm --no-tmux` |
 | `ssh.tmux_session` | `--tmux-session <NAME>` | `azlin connect vm --tmux-session dev` |
 | `ssh.reconnect` | `--no-reconnect` | `azlin connect vm --no-reconnect` |

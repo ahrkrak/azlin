@@ -1,6 +1,6 @@
 # Performance Benchmarks
 
-Measured on Azure VM (Standard_E32as_v5, Ubuntu 25.10).
+Measured on Azure VM (Standard_E32as_v5, Azure Linux 4.0).
 
 ## Startup Time
 

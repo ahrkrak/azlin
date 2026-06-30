@@ -3,7 +3,7 @@
 These tests codify the contract that user-facing documentation must agree with
 the *authoritative* values defined in the Rust source code. They are written
 TDD-style: the version-drift assertions below FAIL when docs assert a stale
-default (e.g. Ubuntu 24.04 default, Node.js 20, Python 3.11 in the dev-tool
+default (e.g. Azure Linux 4.0 default, Node.js 20, Python 3.11 in the dev-tool
 list) and PASS once the docs are aligned with code.
 
 Authoritative sources (single source of truth):
@@ -49,20 +49,19 @@ def _read(path: Path) -> str:
 
 
 def authoritative_default_image() -> str:
-    """Return the default Ubuntu offer string, e.g. 'ubuntu-26_04-lts'."""
+    """Return the default Azure Linux 4.0 offer string, e.g. 'azure-linux-4'."""
     text = _read(MODELS_RS)
-    # The Default impl sets `offer: "ubuntu-XX_YY-lts".into(),`
-    m = re.search(r'offer:\s*"(ubuntu-[\d_]+(?:-lts)?)"\s*\.into\(\)', text)
+    # The Default impl sets `offer: "azure-linux-4".into(),`
+    m = re.search(r'offer:\s*"(azure-linux-4)"\s*\.into\(\)', text)
     assert m, "Could not parse default VM image offer from models.rs"
     return m.group(1)
 
 
-def authoritative_default_ubuntu_version() -> str:
-    """Return the human-facing default Ubuntu version, e.g. '26.04'."""
-    offer = authoritative_default_image()  # ubuntu-26_04-lts
-    m = re.search(r"ubuntu-(\d+)_(\d+)", offer)
-    assert m, f"Unexpected offer format: {offer}"
-    return f"{m.group(1)}.{m.group(2)}"
+def authoritative_default_os_label() -> str:
+    """Return the human-facing default OS label."""
+    offer = authoritative_default_image()
+    assert offer == "azure-linux-4", f"Unexpected offer format: {offer}"
+    return "Azure Linux 4.0"
 
 
 def authoritative_node_major() -> str:
@@ -127,9 +126,9 @@ def _doc_lines():
 # Tests: authoritative extraction sanity.
 # --------------------------------------------------------------------------- #
 class TestAuthoritativeValues:
-    def test_default_image_is_ubuntu_26_04(self):
-        assert authoritative_default_image() == "ubuntu-26_04-lts"
-        assert authoritative_default_ubuntu_version() == "26.04"
+    def test_default_image_is_azure_linux_4(self):
+        assert authoritative_default_image() == "azure-linux-4"
+        assert authoritative_default_os_label() == "Azure Linux 4.0"
 
     def test_toolchain_versions(self):
         assert authoritative_node_major() == "24"
@@ -142,29 +141,29 @@ class TestAuthoritativeValues:
 # Tests: docs must not assert a stale *default* OS.
 # --------------------------------------------------------------------------- #
 class TestDefaultOsDrift:
-    # A line that pairs the word "default" with a concrete Ubuntu version is an
+    # A line that pairs the word "default" with a concrete Azure Linux 4.0 version is an
     # assertion about the default OS. If that version isn't the authoritative
     # one, it's drift.
     _DEFAULT_OS_RE = re.compile(
-        r"default[^.\n]{0,60}?ubuntu[^.\n]{0,20}?(\d{2}\.\d{2})"
-        r"|ubuntu[^.\n]{0,20}?(\d{2}\.\d{2})[^.\n]{0,40}?default",
+        r"default[^.\n]{0,80}?(Azure Linux 4\.0)"
+        r"|(Azure Linux 4\.0)[^.\n]{0,80}?default",
         re.IGNORECASE,
     )
 
     def test_no_stale_default_os_assertion(self):
-        expected = authoritative_default_ubuntu_version()
+        expected = authoritative_default_os_label()
         offenders = []
         for path, lineno, line in _doc_lines():
             m = self._DEFAULT_OS_RE.search(line)
             if not m:
                 continue
-            version = m.group(1) or m.group(2)
-            if version != expected:
+            label = m.group(1) or m.group(2)
+            if label != expected:
                 offenders.append(
                     f"{path.relative_to(REPO_ROOT)}:{lineno}: {line.strip()}"
                 )
         assert not offenders, (
-            f"Docs assert a stale default OS (expected Ubuntu {expected}):\n"
+            f"Docs assert a stale default OS (expected {expected}):\n"
             + "\n".join(offenders)
         )
 

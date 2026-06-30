@@ -78,37 +78,37 @@ fn test_reconnect_prompt() {
 }
 
 #[test]
-fn test_format_os_display_ubuntu() {
+fn test_format_os_display_azure_linux() {
     assert_eq!(
-        format_os_display(Some("UbuntuServer"), &azlin_core::models::OsType::Linux),
-        "Ubuntu (UbuntuServer)"
+        format_os_display(Some("azure-linux-4"), &azlin_core::models::OsType::Linux),
+        "Azure Linux 4.0"
     );
 }
 
 #[test]
-fn test_format_os_display_ubuntu_jammy() {
+fn test_format_os_display_azure_linux_primary_offer() {
     assert_eq!(
         format_os_display(
-            Some("0001-com-ubuntu-server-jammy"),
+            Some("azure-linux-4"),
             &azlin_core::models::OsType::Linux
         ),
-        "Ubuntu 22.04 LTS"
+        "Azure Linux 4.0"
     );
 }
 
 #[test]
-fn test_format_os_display_ubuntu_version() {
+fn test_format_os_display_azure_linux_versioned_offer() {
     assert_eq!(
-        format_os_display(Some("ubuntu-24_04-lts"), &azlin_core::models::OsType::Linux),
-        "Ubuntu 24.04 LTS"
+        format_os_display(Some("azure-linux-4"), &azlin_core::models::OsType::Linux),
+        "Azure Linux 4.0"
     );
 }
 
 #[test]
-fn test_format_os_display_ubuntu_non_lts() {
+fn test_format_os_display_azure_linux_non_lts_alias() {
     assert_eq!(
-        format_os_display(Some("ubuntu-25_10"), &azlin_core::models::OsType::Linux),
-        "Ubuntu 25.10"
+        format_os_display(Some("azure-linux-4"), &azlin_core::models::OsType::Linux),
+        "Azure Linux 4.0"
     );
 }
 
@@ -195,46 +195,46 @@ fn test_format_os_display_unknown_offer() {
 #[test]
 fn test_format_os_display_noble() {
     let out = format_os_display(
-        Some("0001-com-ubuntu-server-noble"),
+        Some("azure-linux-4"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(out, "Ubuntu 24.04 LTS");
+    assert_eq!(out, "Azure Linux 4.0");
 }
 
 #[test]
 fn test_format_os_display_focal() {
     let out = format_os_display(
-        Some("0001-com-ubuntu-server-focal"),
+        Some("azure-linux-4-gen2"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(out, "Ubuntu 20.04 LTS");
+    assert_eq!(out, "Azure Linux 4.0");
 }
 
 #[test]
 fn test_format_os_display_bionic() {
     let out = format_os_display(
-        Some("0001-com-ubuntu-server-bionic"),
+        Some("MicrosoftCBLMariner"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(out, "Ubuntu 18.04 LTS");
+    assert_eq!(out, "Azure Linux 4.0");
 }
 
 #[test]
 fn test_format_os_display_plucky() {
     let out = format_os_display(
-        Some("0001-com-ubuntu-server-plucky"),
+        Some("azure-linux-4"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(out, "Ubuntu 25.04");
+    assert_eq!(out, "Azure Linux 4.0");
 }
 
 #[test]
 fn test_format_os_display_oracular() {
     let out = format_os_display(
-        Some("0001-com-ubuntu-server-oracular"),
+        Some("cbl-mariner-2"),
         &azlin_core::models::OsType::Linux,
     );
-    assert_eq!(out, "Ubuntu 24.10");
+    assert_eq!(out, "Azure Linux 4.0");
 }
 
 // Additional tests in display_helpers_tests2.rs

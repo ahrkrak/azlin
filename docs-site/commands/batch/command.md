@@ -73,7 +73,7 @@ azlin batch command 'free -h' --all --rg production-rg
 
 ```bash
 # More parallel workers (faster)
-azlin batch command 'apt update' --all --max-workers 20
+azlin batch command 'tdnf update' --all --max-workers 20
 
 # Sequential execution
 azlin batch command 'systemctl restart app' --all --max-workers 1
@@ -112,7 +112,7 @@ azlin batch command 'systemctl status myapp' --all --show-output
 
 ```bash
 # Update packages
-azlin batch command 'sudo apt update && sudo apt upgrade -y' --all --timeout 900
+azlin batch command 'sudo tdnf update -y' --all --timeout 900
 
 # Check disk space
 azlin batch command 'df -h | grep -E "/$|/home"' --all --show-output

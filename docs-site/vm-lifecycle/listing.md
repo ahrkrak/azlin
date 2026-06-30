@@ -19,7 +19,7 @@ azlin list --wide
 
 The `azlin list` command provides a comprehensive view of your VMs with:
 
-- **OS identification** - Distro icon + name/version (e.g., 🟠 Ubuntu 25.10)
+- **OS identification** - Distro icon + name/version (e.g., 🟠 Azure Linux 4.0)
 - **Real-time status** - Power state, IP addresses, region
 - **Resource details** - VM size, vCPUs, memory
 - **Quota information** - Current usage vs. available quota
@@ -64,13 +64,13 @@ The default output shows:
 
 ```
 SESSION          OS                STATUS    IP               REGION   CPU  Mem
-🟠 my-project    Ubuntu 25.10      Running   20.51.23.145     eastus    32  64GB
-🟠 backend-api   Ubuntu 22.04 LTS  Running   10.0.1.5 (Bast)  westus    16  32GB
-🟠 model-train   Ubuntu 24.04 LTS  Running   20.14.7.89       eastus2   64  128GB
+🟠 my-project    Azure Linux 4.0      Running   20.51.23.145     eastus    32  64GB
+🟠 backend-api   Azure Linux 4.0  Running   10.0.1.5 (Bast)  westus    16  32GB
+🟠 model-train   Azure Linux 4.0  Running   20.14.7.89       eastus2   64  128GB
 ```
 
 The OS column shows the detected operating system. The Session column includes an
-OS icon prefix (🟠 Ubuntu, 🪟 Windows, 🐧 generic Linux, 🔴 Debian, 🎩 RHEL).
+OS icon prefix (🟠 Azure Linux 4.0, 🪟 Windows, 🐧 generic Linux, 🔴 Debian, 🎩 RHEL).
 
 With `--wide` flag, names are not truncated:
 

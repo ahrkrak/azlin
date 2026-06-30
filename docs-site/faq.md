@@ -4,7 +4,7 @@
 
 ### What is azlin?
 
-azlin is a CLI tool for provisioning and managing Azure Ubuntu VMs for development. It automates VM creation, tool installation, SSH setup, and session management.
+azlin is a CLI tool for provisioning and managing Azure Linux 4.0 VMs for development. It automates VM creation, tool installation, SSH setup, and session management.
 
 ### What language is azlin written in?
 

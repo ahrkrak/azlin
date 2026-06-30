@@ -1,4 +1,4 @@
-"""azlin - Azure Ubuntu VM provisioning CLI
+"""azlin - Azure Linux VM provisioning CLI
 
 Philosophy:
 - Ruthless simplicity
@@ -6,7 +6,7 @@ Philosophy:
 - Security by design (no credentials in code)
 - Fail fast with helpful guidance
 
-The azlin CLI automates the creation of Azure Ubuntu VMs with development tools,
+The azlin CLI automates the creation of Azure Linux 4.0 VMs with development tools,
 SSH connection, and optional GitHub repository setup.
 
 Version 2.0 Features:

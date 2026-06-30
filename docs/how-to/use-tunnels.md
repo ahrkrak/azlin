@@ -57,7 +57,7 @@ Final SSH username
 Override only if you provisioned the VM with a non-standard username:
 
 ```bash
-azlin tunnel open myvm 8080 --user ubuntu
+azlin tunnel open myvm 8080 --user azureuser
 ```
 
 ### SSH Key

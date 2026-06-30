@@ -234,7 +234,7 @@ azlin new --size xl --repo https://github.com/user/ml-project -- \
 
 # Install additional software
 azlin new --size m -- \
-  "sudo apt-get update && sudo apt-get install -y postgresql-client"
+  "sudo tdnf install -y postgresql-client"
 ```
 
 ## Provisioning Time

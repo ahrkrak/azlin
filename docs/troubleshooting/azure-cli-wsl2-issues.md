@@ -481,7 +481,7 @@ print(f'Output: {result.stdout[:200]}')
 
 ## Environment-Specific Issues
 
-### Ubuntu 20.04 LTS
+### Azure Linux 4.0
 
 ```bash
 # May need to update package sources
@@ -489,7 +489,7 @@ sudo apt-get update
 sudo apt-get install ca-certificates curl apt-transport-https lsb-release gnupg
 ```
 
-### Ubuntu 22.04 LTS
+### Azure Linux 4.0
 
 ```bash
 # Should work out of the box

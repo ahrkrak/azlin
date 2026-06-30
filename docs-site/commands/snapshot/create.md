@@ -116,7 +116,7 @@ azlin snapshot create my-vm
 
 # Perform updates
 azlin connect my-vm
-sudo apt update && sudo apt upgrade -y
+sudo tdnf update -y
 exit
 
 # Test everything works

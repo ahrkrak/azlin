@@ -354,7 +354,7 @@ use crate::cmd_list_data::build_wt_restore_args;
 #[test]
 fn test_wt_args_with_wsl_distro_wraps_bash_lc() {
     let mode = azlin_core::RestoreMode::Tab;
-    let args = build_wt_restore_args("Ubuntu", "/usr/bin/azlin", "my-vm", "azlin", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/usr/bin/azlin", "my-vm", "azlin", &mode);
     assert!(args.contains(&"bash".to_string()), "should contain bash");
     assert!(args.contains(&"-lc".to_string()), "should contain -lc");
     let shell_cmd = args.last().unwrap();
@@ -392,28 +392,28 @@ fn test_wt_args_without_wsl_distro_uses_direct_args() {
 #[test]
 fn test_wt_args_tab_mode_starts_with_window_tab() {
     let mode = azlin_core::RestoreMode::Tab;
-    let args = build_wt_restore_args("Ubuntu", "/usr/bin/azlin", "vm1", "dev", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/usr/bin/azlin", "vm1", "dev", &mode);
     assert_eq!(&args[0..3], &["-w", "0", "new-tab"]);
 }
 
 #[test]
 fn test_wt_args_window_mode_uses_new_window() {
     let mode = azlin_core::RestoreMode::Window;
-    let args = build_wt_restore_args("Ubuntu", "/usr/bin/azlin", "vm1", "dev", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/usr/bin/azlin", "vm1", "dev", &mode);
     assert_eq!(&args[0..3], &["-w", "new", "new-tab"]);
 }
 
 #[test]
 fn test_wt_args_auto_mode_defaults_to_tab_prefix() {
     let mode = azlin_core::RestoreMode::Auto;
-    let args = build_wt_restore_args("Ubuntu", "/usr/bin/azlin", "vm1", "dev", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/usr/bin/azlin", "vm1", "dev", &mode);
     assert_eq!(&args[0..3], &["-w", "0", "new-tab"]);
 }
 
 #[test]
 fn test_wt_args_escapes_paths_with_spaces() {
     let mode = azlin_core::RestoreMode::Tab;
-    let args = build_wt_restore_args("Ubuntu", "/path with spaces/azlin", "vm1", "dev", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/path with spaces/azlin", "vm1", "dev", &mode);
     let shell_cmd = args.last().unwrap();
     assert!(
         shell_cmd.contains("'/path with spaces/azlin'"),
@@ -425,7 +425,7 @@ fn test_wt_args_escapes_paths_with_spaces() {
 #[test]
 fn test_wt_args_escapes_single_quotes_in_names() {
     let mode = azlin_core::RestoreMode::Tab;
-    let args = build_wt_restore_args("Ubuntu", "/usr/bin/azlin", "vm-o'brien", "dev", &mode);
+    let args = build_wt_restore_args("Azure Linux 4.0", "/usr/bin/azlin", "vm-o'brien", "dev", &mode);
     let shell_cmd = args.last().unwrap();
     assert!(
         shell_cmd.contains("'vm-o'\\''brien'"),

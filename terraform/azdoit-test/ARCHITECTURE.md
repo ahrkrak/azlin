@@ -29,7 +29,7 @@ This Terraform module provisions minimal Azure infrastructure specifically desig
 │  │  │  │  ┌────────────▼───────────────────────┐ │ │ │    │
 │  │  │  │  │ Virtual Machine                    │ │ │ │    │
 │  │  │  │  │ Name: test-azdoit-vm-1             │ │ │ │    │
-│  │  │  │  │ OS: Ubuntu 22.04 LTS               │ │ │ │    │
+│  │  │  │  │ OS: Azure Linux 4.0               │ │ │ │    │
 │  │  │  │  │ Size: Standard_B2s                 │ │ │ │    │
 │  │  │  │  │ - 2 vCPUs                          │ │ │ │    │
 │  │  │  │  │ - 4 GB RAM                         │ │ │ │    │
@@ -139,7 +139,7 @@ azurerm_resource_group (test-azdoit-rg)
   - vCPUs: 2
   - RAM: 4 GB
   - Cost: ~$0.166/day
-- **OS**: Ubuntu 22.04 LTS (Jammy Jellyfish)
+- **OS**: Azure Linux 4.0 (Jammy Jellyfish)
 - **Disk**: 30 GB Standard LRS
 - **Authentication**: SSH key only
 - **Admin User**: azureuser
@@ -302,4 +302,4 @@ terraform {
 - [Azure Virtual Machines Documentation](https://docs.microsoft.com/azure/virtual-machines/)
 - [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
 - [Azure Pricing Calculator](https://azure.microsoft.com/pricing/calculator/)
-- [Ubuntu 22.04 LTS](https://ubuntu.com/server)
+- [Azure Linux 4.0](https://learn.microsoft.com/azure/azure-linux/intro-azure-linux)

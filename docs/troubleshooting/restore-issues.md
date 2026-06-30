@@ -141,7 +141,7 @@ sudo mount -o remount,rw /mnt/c
 **Cause**: gnome-terminal not installed
 ```bash
 # Ubuntu/Debian
-sudo apt install gnome-terminal
+sudo tdnf install gnome-terminal
 
 # Fedora
 sudo dnf install gnome-terminal
@@ -240,7 +240,7 @@ error connecting to /tmp/tmux-1000/default (No such file or directory)
 ssh -i ~/.ssh/id_rsa azureuser@<vm-ip>
 
 # Install tmux
-sudo apt install tmux    # Ubuntu/Debian
+sudo tdnf install tmux    # Ubuntu/Debian
 sudo yum install tmux    # RHEL/CentOS
 ```
 

@@ -1,10 +1,10 @@
 # azlin os-update
 
-Update Ubuntu system packages on azlin VMs for security and stability.
+Update Azure Linux 4.0 system packages on azlin VMs for security and stability.
 
 ## Description
 
-Run Ubuntu package updates (`apt update && apt upgrade`) on VMs. Apply security patches, update system libraries, and maintain VM health.
+Run Azure Linux 4.0 package updates (`tdnf update`) on VMs. Apply security patches, update system libraries, and maintain VM health.
 
 ## Usage
 
@@ -35,29 +35,17 @@ azlin os-update my-dev-vm
 
 **Output:**
 ```
-Updating Ubuntu packages on 'my-dev-vm'...
+Updating Azure Linux 4.0 packages on 'my-dev-vm'...
 
 Connecting to VM...
 ✓ Connected
 
-Running: sudo apt update
-Hit:1 http://azure.archive.ubuntu.com/ubuntu jammy InRelease
-Get:2 http://security.ubuntu.com/ubuntu jammy-security InRelease [110 kB]
-Fetched 1,234 kB in 2s (617 kB/s)
-Reading package lists... Done
-Building dependency tree... Done
-36 packages can be upgraded.
-
-Running: sudo apt upgrade -y
-Reading package lists... Done
-Building dependency tree... Done
-The following packages will be upgraded:
-  libssl3 openssl python3 ...
-36 upgraded, 0 newly installed, 0 to remove
-
-Unpacking libssl3 (3.0.2-0ubuntu1.12) ...
-Setting up libssl3 (3.0.2-0ubuntu1.12) ...
-Processing triggers for libc-bin ...
+Running: sudo tdnf update
+Refreshing metadata and resolving package dependencies...
+Found 36 updates available.
+Downloading package metadata...
+Installing updates...
+Updated: openssl python3 kernel ...
 
 ✓ Update complete!
   Packages upgraded: 36
@@ -78,11 +66,11 @@ azlin os-update prod-vm --reboot
 ...
 ✓ Update complete!
   Packages upgraded: 42
-  Kernel updated: 5.15.0-91 -> 5.15.0-92
+  Kernel updated: 6.6.74-1.azl4 -> 6.6.82-1.azl4
 
 Reboot required. Rebooting VM...
 ✓ VM rebooted successfully.
-  New kernel: 5.15.0-92
+  New kernel: 6.6.82-1.azl4
 ```
 
 ### Update with Custom Timeout
@@ -172,8 +160,7 @@ azlin fleet update --tag env=production --os-packages
 The command runs:
 
 ```bash
-sudo apt update          # Refresh package lists
-sudo apt upgrade -y      # Install available updates
+sudo tdnf update         # Refresh metadata and install available updates
 ```
 
 **Updated components:**
@@ -262,7 +249,7 @@ azlin os-update my-vm --timeout 900
 
 # Or SSH and update manually
 azlin connect my-vm
-sudo apt update && sudo apt upgrade -y
+sudo tdnf update -y
 ```
 
 ### Package Lock Held
@@ -271,9 +258,9 @@ sudo apt update && sudo apt upgrade -y
 
 **Solution:**
 ```bash
-# Wait for other apt processes to complete
+# Wait for other tdnf processes to complete
 azlin connect my-vm
-sudo lsof /var/lib/dpkg/lock-frontend
+ps -ef | grep tdnf
 # Kill if safe, or wait
 ```
 
@@ -284,8 +271,8 @@ sudo lsof /var/lib/dpkg/lock-frontend
 **Solution:**
 ```bash
 azlin connect my-vm
-sudo apt --fix-broken install
-sudo apt update && sudo apt upgrade -y
+sudo tdnf distro-sync -y
+sudo tdnf update -y
 ```
 
 ## Related Commands

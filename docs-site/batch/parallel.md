@@ -46,10 +46,10 @@ azlin batch command 'docker build .' --all --max-workers 3
 
 ```bash
 # Too aggressive - may timeout
-azlin batch command 'apt upgrade -y' --all --max-workers 20
+azlin batch command 'tdnf update -y' --all --max-workers 20
 
 # Better - balanced for heavy operation
-azlin batch command 'apt upgrade -y' --all --max-workers 5 --timeout 900
+azlin batch command 'tdnf update -y' --all --max-workers 5 --timeout 900
 ```
 
 ## See Also

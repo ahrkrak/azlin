@@ -210,9 +210,9 @@ mod tests {
 
     #[test]
     fn test_os_update_failure_message_with_stderr() {
-        let msg = os_update_failure_message("vm1", "  apt failed  ");
+        let msg = os_update_failure_message("vm1", "  tdnf failed  ");
         assert!(msg.starts_with("OS update failed on 'vm1': "));
-        assert!(msg.contains("apt failed"));
+        assert!(msg.contains("tdnf failed"));
     }
 
     #[test]

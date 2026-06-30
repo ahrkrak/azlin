@@ -495,7 +495,7 @@ src/api/automation-client.ts     // Azure Automation API
 - 5-step wizard:
   1. Basics (name, resource group, location)
   2. Size selection with cost comparison
-  3. OS image (Ubuntu 22.04/24.04, Debian 12, RHEL)
+  3. OS image (Azure Linux 4.0/24.04, Debian 12, RHEL)
   4. Networking (VNet, subnet, public IP optional)
   5. SSH key (upload from Files app or paste)
 - Template saving ("Save as template")

@@ -43,7 +43,7 @@ this username, but if your VM was provisioned differently:
 azlin list -o json | jq '.[] | select(.name=="myvm") | .admin_username'
 
 # Override explicitly
-azlin tunnel open myvm 8080 --user ubuntu
+azlin tunnel open myvm 8080 --user azureuser
 ```
 
 Azlin resolves the username from VM metadata when available, so this override

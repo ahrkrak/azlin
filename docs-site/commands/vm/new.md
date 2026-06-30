@@ -4,7 +4,7 @@
 
 ## Description
 
-The `azlin new` command is the core of azlin - it provisions a fully-equipped Azure Ubuntu VM with all development tools pre-installed in 4-7 minutes. This single command handles authentication, VM creation, SSH key management (automatically stored in Azure Key Vault), cloud-init tool installation, optional NFS storage mounting, GitHub repository cloning, and automatic SSH connection with tmux.
+The `azlin new` command is the core of azlin - it provisions a fully-equipped Azure Linux 4.0 VM with all development tools pre-installed in 4-7 minutes. This single command handles authentication, VM creation, SSH key management (automatically stored in Azure Key Vault), cloud-init tool installation, optional NFS storage mounting, GitHub repository cloning, and automatic SSH connection with tmux.
 
 **What gets installed on every VM:**
 - Docker, Azure CLI, GitHub CLI, Git
@@ -293,7 +293,7 @@ When you run `azlin new`, the following happens automatically:
 
 1. **Authentication** - Verifies Azure CLI authentication
 2. **Prerequisites** - Checks SSH keys and required tools
-3. **VM Creation** - Provisions Ubuntu 26.04 LTS VM with your chosen size
+3. **VM Creation** - Provisions Azure Linux 4.0 VM with your chosen size
 4. **Cloud-Init** - Installs all development tools (4-5 minutes)
 5. **SSH Key Storage** - Automatically stores private key in Azure Key Vault for cross-system access
 6. **NFS Storage** (optional) - Mounts shared persistent home directory
@@ -341,12 +341,12 @@ azlin new --no-nfs
 
 Every VM runs a comprehensive cloud-init script that:
 
-1. Updates system packages (apt update/upgrade)
+1. Updates system packages (`tdnf update`)
 2. Installs Docker and docker-compose
 3. Configures non-root Docker access
 4. Installs Azure CLI, GitHub CLI, Git
 5. Sets up Node.js with user-local npm (no sudo needed)
-6. Installs Python 3.14+ from deadsnakes PPA
+6. Installs Python 3.14+ for the VM environment
 7. Installs Rust via rustup
 8. Installs Golang
 9. Installs .NET 10
@@ -388,8 +388,8 @@ azlin new --region westus2
 ssh azureuser@<vm-ip>
 sudo tail -f /var/log/cloud-init-output.log
 
-# Check for apt lock issues
-sudo lsof /var/lib/dpkg/lock-frontend
+# Check for tdnf activity
+ps -ef | grep tdnf
 ```
 
 ### SSH Connection Fails

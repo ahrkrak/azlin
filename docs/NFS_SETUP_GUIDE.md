@@ -18,11 +18,11 @@ This setting ensures new VMs automatically mount your shared NFS home directory.
 ## The Problem
 
 When you create a VM with NFS enabled, this happens:
-1. VM is created with basic Ubuntu defaults
+1. VM is created with basic Azure Linux 4.0 defaults
 2. NFS share is mounted to `/home/azureuser`
 3. If NFS share is empty, the VM's home directory contents are copied to it
 
-**BUT**: A new VM's home directory only has Ubuntu defaults, NOT your custom configuration from `~/.azlin/home` (SSH keys, .bashrc, tools, etc.).
+**BUT**: A new VM's home directory only has Azure Linux 4.0 defaults, NOT your custom configuration from `~/.azlin/home` (SSH keys, .bashrc, tools, etc.).
 
 The `~/.azlin/home` directory is only synced when NFS is NOT being used.
 

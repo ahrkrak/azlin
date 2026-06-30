@@ -1184,7 +1184,7 @@ macOS:
 brew install azure-cli
 ```
 
-Linux (Debian/Ubuntu):
+Linux (Debian/Azure Linux 4.0):
 ```bash
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 ```

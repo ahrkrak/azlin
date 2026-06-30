@@ -91,9 +91,9 @@ interface VmSizeOption {
 **Contract**:
 ```typescript
 interface ImageStepData {
-  publisher: string;        // e.g., "Canonical"
-  offer: string;            // e.g., "0001-com-ubuntu-server-jammy"
-  sku: string;              // e.g., "22_04-lts-gen2"
+  publisher: string;        // e.g., "MicrosoftCBLMariner"
+  offer: string;            // e.g., "azure-linux-4"
+  sku: string;              // e.g., "azure-linux-4-gen2"
   version: string;          // e.g., "latest"
 }
 ```
@@ -101,8 +101,8 @@ interface ImageStepData {
 **Presets**:
 ```typescript
 const OS_PRESETS = {
-  ubuntu2204: { publisher: "Canonical", offer: "0001-com-ubuntu-server-jammy", sku: "22_04-lts-gen2" },
-  ubuntu2404: { publisher: "Canonical", offer: "ubuntu-24_04-lts", sku: "server-gen2" },
+  azurelinux4: { publisher: "MicrosoftCBLMariner", offer: "azure-linux-4", sku: "azure-linux-4-gen2" },
+  
   debian12: { publisher: "Debian", offer: "debian-12", sku: "12-gen2" },
   rhel9: { publisher: "RedHat", offer: "RHEL", sku: "9-lvm-gen2" },
 };
@@ -411,7 +411,7 @@ interface WizardStepProps<T> {
 ### Key Design Decisions
 
 1. **Progressive Disclosure**: Advanced options (custom images, advanced networking) hidden by default
-2. **Sensible Defaults**: Pre-populate common values (default-vnet, ubuntu2204, public IP)
+2. **Sensible Defaults**: Pre-populate common values (default-vnet, azurelinux4, public IP)
 3. **Inline Help**: Contextual tooltips for technical terms (VNet, NSG, SKU)
 4. **Cost Transparency**: Real-time cost preview on every selection change
 5. **Draft Persistence**: Never lose work on accidental navigation

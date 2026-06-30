@@ -76,7 +76,7 @@ azlin gui my-vm --user azureuser --key ~/.ssh/azlin_key
 
 **Single app mode** runs the specified command directly. The VNC window shows only that application. When the app is closed, the VNC server exits automatically.
 
-> **Note on Chromium/browsers**: Use `--no-sandbox` when running Chromium in VNC: `azlin gui my-vm --app "chromium-browser --no-sandbox"`. When azlin launches Chromium directly, it auto-wraps snap-backed invocations in `systemd-run --user --scope`, which avoids the common `is not a snap cgroup` failure on Ubuntu VMs.
+> **Note on Chromium/browsers**: Use `--no-sandbox` when running Chromium in VNC: `azlin gui my-vm --app "chromium-browser --no-sandbox"`. When azlin launches Chromium directly, it auto-wraps snap-backed invocations in `systemd-run --user --scope`, which avoids the common `is not a snap cgroup` failure on Azure Linux 4.0 VMs.
 
 ### How It Works
 
@@ -180,7 +180,7 @@ Install `autocutsel` on the VM for bidirectional clipboard support:
 
 ```bash
 # On the VM
-sudo apt-get install -y autocutsel
+sudo tdnf install -y autocutsel
 autocutsel -fork
 ```
 
@@ -269,7 +269,7 @@ The `xauth` package may be missing on the VM:
 
 ```bash
 # On the VM
-sudo apt-get install -y xauth
+sudo tdnf install -y xauth
 # Disconnect and reconnect with --x11
 ```
 

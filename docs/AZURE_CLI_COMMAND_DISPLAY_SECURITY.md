@@ -482,7 +482,7 @@ class TestCommandSanitization:
 
     def test_preserves_non_sensitive_parameters(self):
         """Test that non-sensitive parameters are preserved."""
-        command = "az vm create --name myvm --resource-group myrg --image Ubuntu2204"
+        command = "az vm create --name myvm --resource-group myrg --image MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
         result = AzureCommandSanitizer.sanitize_command(command)
         assert result == command
 

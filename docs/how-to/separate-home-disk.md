@@ -533,7 +533,7 @@ The OS disk already has `/home/azureuser` with default dotfiles. When the home d
 - **With `nofail`**: If mount succeeds, it overlays `/home` (existing contents hidden)
 - **If mount fails**: Original `/home` from OS disk remains visible
 
-**Best practice**: The default Ubuntu image has minimal `/home` contents. Data created AFTER VM provisioning goes to the home disk.
+**Best practice**: The default Azure Linux 4.0 image has minimal `/home` contents. Data created AFTER VM provisioning goes to the home disk.
 
 ### Q: What disk type does azlin use?
 
