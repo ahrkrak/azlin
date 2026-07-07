@@ -1071,7 +1071,7 @@ mod tests {
 
     #[test]
     fn test_validate_field_default_vm_image_shorthand() {
-        let result = AzlinConfig::validate_field("default_vm_image", "24.04-lts");
+        let result = AzlinConfig::validate_field("default_vm_image", "azure-linux-4");
         assert!(result.is_ok(), "should accept valid shorthand");
         // Should store the resolved full URN
         assert_eq!(
