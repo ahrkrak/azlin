@@ -1169,7 +1169,7 @@ mod tests {
     #[test]
     fn test_cloud_init_script_installs_essential_tools() {
         let script = cloud_init_script("testuser");
-        for tool in &["git", "curl", "tmux", "docker.io", "make", "fd-find"] {
+        for tool in &["git", "curl", "tmux", "moby-engine", "docker-cli", "make"] {
             assert!(script.contains(tool), "Missing tool: {tool}");
         }
     }
@@ -1194,13 +1194,10 @@ mod tests {
     fn test_cloud_init_script_installs_gh_and_az() {
         let script = cloud_init_script("testuser");
         assert!(
-            script.contains("apt update && apt install -y gh"),
+            script.contains("cli/cli/releases/latest") && script.contains("/usr/local/bin/gh"),
             "Missing GitHub CLI install"
         );
-        assert!(
-            script.contains("InstallAzureCLIDeb"),
-            "Missing Azure CLI install"
-        );
+        assert!(script.contains("azure-cli"), "Missing Azure CLI package");
     }
 
     #[test]
@@ -1229,33 +1226,10 @@ mod tests {
     }
 
     #[test]
-    fn test_cloud_init_script_installs_chromium_and_wrappers() {
+    fn test_cloud_init_script_warns_chromium_unavailable() {
         let script = cloud_init_script("user");
-        assert!(script.contains("apt-get install -y chromium-browser"));
         assert!(script.contains("xdg-utils"));
-        assert!(script.contains("cat > /usr/local/bin/chromium-browser << 'CHROMIUMWRAP'"));
-        assert!(
-            script.contains("exec systemd-run --user --scope --quiet -- \"$REAL_COMMAND\" \"$@\"")
-        );
-        assert!(script.contains("cat > /usr/local/bin/chromium << 'CHROMIUMALIAS'"));
-        assert!(script.contains("exec /usr/local/bin/chromium-browser \"$@\""));
-    }
-
-    #[test]
-    fn test_cloud_init_script_chromium_wrapper_repairs_user_session_env() {
-        let script = cloud_init_script("user");
-        assert!(script.contains("export XDG_RUNTIME_DIR=\"/run/user/$(id -u)\""));
-        assert!(
-            script.contains("export DBUS_SESSION_BUS_ADDRESS=\"unix:path=$XDG_RUNTIME_DIR/bus\"")
-        );
-        assert!(script.contains("systemctl --user show-environment >/dev/null 2>&1"));
-    }
-
-    #[test]
-    fn test_cloud_init_script_chromium_wrapper_fails_loudly_when_scope_unavailable() {
-        let script = cloud_init_script("user");
-        assert!(script.contains("Chromium requires systemd user scope support on this VM, but systemd tooling is unavailable."));
-        assert!(script.contains("Chromium requires an active systemd user environment on this VM. Check linger/user-systemd setup."));
+        assert!(script.contains("Chromium is not packaged for Azure Linux 4.0"));
     }
 
     #[test]
@@ -1568,11 +1542,11 @@ mod tests {
             "name": "vm1",
             "storageProfile": {
                 "osDisk": { "osType": "Linux" },
-                "imageReference": { "offer": "azure-linux-4" }
+                "imageReference": { "offer": "azurelinux-4" }
             }
         });
         let vm = parse_vm_from_az_json(&json, Some("rg"));
-        assert_eq!(vm.os_offer.as_deref(), Some("azure-linux-4"));
+        assert_eq!(vm.os_offer.as_deref(), Some("azurelinux-4"));
     }
 
     #[test]
