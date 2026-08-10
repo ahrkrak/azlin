@@ -114,7 +114,7 @@ pub(super) fn make_test_vm(name: &str, power_state: PowerState) -> VmInfo {
         power_state,
         provisioning_state: ProvisioningState::Succeeded,
         os_type: OsType::Linux,
-        os_offer: Some("azure-linux-4".to_string()),
+        os_offer: Some("azurelinux-4".to_string()),
         public_ip: Some("20.1.2.3".to_string()),
         private_ip: Some("10.0.0.4".to_string()),
         admin_username: Some("azureuser".to_string()),

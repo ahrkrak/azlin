@@ -41,7 +41,7 @@ pub struct VmInfo {
     pub power_state: PowerState,
     pub provisioning_state: ProvisioningState,
     pub os_type: OsType,
-    /// Image offer string from Azure (e.g., "azure-linux-4", "WindowsServer").
+    /// Image offer string from Azure (e.g., "azurelinux-4", "WindowsServer").
     /// Used for OS distro display in list output.
     pub os_offer: Option<String>,
     pub public_ip: Option<String>,
@@ -227,9 +227,9 @@ pub struct VmImage {
 impl Default for VmImage {
     fn default() -> Self {
         Self {
-            publisher: "MicrosoftCBLMariner".into(),
-            offer: "azure-linux-4".into(),
-            sku: "azure-linux-4-gen2".into(),
+            publisher: "microsoftazurelinux".into(),
+            offer: "azurelinux-4".into(),
+            sku: "4".into(),
             version: "latest".into(),
         }
     }
@@ -249,10 +249,10 @@ impl VmImage {
     /// Parse an image specification into a `VmImage`.
     ///
     /// Accepts:
-    /// - Full URN: `MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest`
+    /// - Full URN: `microsoftazurelinux:azurelinux-4:4:latest`
     /// - Shorthands: `azurelinux4`, `azure-linux-4`, `azurelinux`, `4.0`
     ///
-    /// Returns an error for empty/whitespace input, shell metacharacters, non-MicrosoftCBLMariner
+    /// Returns an error for empty/whitespace input, shell metacharacters, non-microsoftazurelinux
     /// publishers, malformed URNs, or unrecognized shorthands.
     pub fn from_image_spec(spec: &str) -> Result<Self, String> {
         let spec = spec.trim();
@@ -266,7 +266,7 @@ impl VmImage {
         if spec.as_bytes().iter().any(|b| FORBIDDEN.contains(b)) {
             return Err(format!(
                 "Image spec contains invalid characters: {:?}. Use a URN like \
-                'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest' or shorthand like 'azurelinux4'",
+                'microsoftazurelinux:azurelinux-4:4:latest' or shorthand like 'azurelinux4'",
                 spec
             ));
         }
@@ -280,7 +280,7 @@ impl VmImage {
         Self::resolve_shorthand(spec)
     }
 
-    /// Parse a 4-part colon-delimited URN, restricted to MicrosoftCBLMariner publisher.
+    /// Parse a 4-part colon-delimited URN, restricted to microsoftazurelinux publisher.
     fn parse_urn(urn: &str) -> Result<Self, String> {
         // Use splitn(5) to detect >4 parts without allocating a Vec.
         let mut it = urn.splitn(5, ':');
@@ -313,11 +313,11 @@ impl VmImage {
             }
         }
 
-        // Restrict to MicrosoftCBLMariner publisher
-        if parts[0] != "MicrosoftCBLMariner" {
+        // Restrict to microsoftazurelinux publisher
+        if parts[0] != "microsoftazurelinux" {
             return Err(format!(
-                "Only MicrosoftCBLMariner publisher is supported for VM images, got {:?}. \
-                 Use a URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'",
+                "Only microsoftazurelinux publisher is supported for VM images, got {:?}. \
+                 Use a URN like 'microsoftazurelinux:azurelinux-4:4:latest'",
                 parts[0]
             ));
         }
@@ -340,7 +340,7 @@ impl VmImage {
             _ => Err(format!(
                 "Unknown image shorthand {:?}. Supported shorthands: \
                  azurelinux4, azure-linux-4, azurelinux, 4.0. \
-                 Or use a full URN like 'MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest'",
+                 Or use a full URN like 'microsoftazurelinux:azurelinux-4:4:latest'",
                 spec
             )),
         }
@@ -543,26 +543,26 @@ mod tests {
     #[test]
     fn test_vm_image_default() {
         let img = VmImage::default();
-        assert_eq!(img.publisher, "MicrosoftCBLMariner");
-        assert_eq!(img.offer, "azure-linux-4");
-        assert_eq!(img.sku, "azure-linux-4-gen2");
+        assert_eq!(img.publisher, "microsoftazurelinux");
+        assert_eq!(img.offer, "azurelinux-4");
+        assert_eq!(img.sku, "4");
         assert_eq!(img.version, "latest");
     }
 
     #[test]
     fn test_vm_image_display() {
         let img = VmImage::default();
-        assert_eq!(img.to_string(), "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest");
+        assert_eq!(img.to_string(), "microsoftazurelinux:azurelinux-4:4:latest");
     }
 
     // ── from_image_spec tests (TDD — will fail until implementation) ──
 
     #[test]
     fn test_from_image_spec_full_urn() {
-        let img = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest").unwrap();
-        assert_eq!(img.publisher, "MicrosoftCBLMariner");
-        assert_eq!(img.offer, "azure-linux-4");
-        assert_eq!(img.sku, "azure-linux-4-gen2");
+        let img = VmImage::from_image_spec("microsoftazurelinux:azurelinux-4:4:latest").unwrap();
+        assert_eq!(img.publisher, "microsoftazurelinux");
+        assert_eq!(img.offer, "azurelinux-4");
+        assert_eq!(img.sku, "4");
         assert_eq!(img.version, "latest");
     }
 
@@ -570,9 +570,9 @@ mod tests {
     fn test_from_image_spec_shorthand_azurelinux4() {
         for spec in ["azurelinux4", "azure-linux-4", "azurelinux", "4.0"] {
             let img = VmImage::from_image_spec(spec).unwrap();
-            assert_eq!(img.publisher, "MicrosoftCBLMariner");
-            assert_eq!(img.offer, "azure-linux-4");
-            assert_eq!(img.sku, "azure-linux-4-gen2");
+            assert_eq!(img.publisher, "microsoftazurelinux");
+            assert_eq!(img.offer, "azurelinux-4");
+            assert_eq!(img.sku, "4");
             assert_eq!(img.version, "latest");
         }
     }
@@ -580,41 +580,41 @@ mod tests {
     #[test]
     fn test_from_image_spec_case_insensitive_uppercase() {
         let img = VmImage::from_image_spec("AZURELINUX4").unwrap();
-        assert_eq!(img.offer, "azure-linux-4");
+        assert_eq!(img.offer, "azurelinux-4");
     }
 
     #[test]
     fn test_from_image_spec_case_insensitive_title_dash() {
         let img = VmImage::from_image_spec("Azure-Linux-4").unwrap();
-        assert_eq!(img.offer, "azure-linux-4");
+        assert_eq!(img.offer, "azurelinux-4");
     }
 
     #[test]
     fn test_from_image_spec_case_insensitive_no_dash() {
         let img = VmImage::from_image_spec("AzureLinux").unwrap();
-        assert_eq!(img.offer, "azure-linux-4");
+        assert_eq!(img.offer, "azurelinux-4");
     }
 
     #[test]
-    fn test_from_image_spec_rejects_non_microsoftcblmariner_publisher() {
+    fn test_from_image_spec_rejects_non_microsoftazurelinux_publisher() {
         let result = VmImage::from_image_spec("MicrosoftWindowsServer:WindowsServer:2022:latest");
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(
-            err.contains("MicrosoftCBLMariner"),
-            "error should mention MicrosoftCBLMariner restriction, got: {err}"
+            err.contains("microsoftazurelinux"),
+            "error should mention microsoftazurelinux restriction, got: {err}"
         );
     }
 
     #[test]
     fn test_from_image_spec_rejects_malformed_urn_3_parts() {
-        let result = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2");
+        let result = VmImage::from_image_spec("microsoftazurelinux:azurelinux-4:4");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_from_image_spec_rejects_malformed_urn_5_parts() {
-        let result = VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest:extra");
+        let result = VmImage::from_image_spec("microsoftazurelinux:azurelinux-4:4:latest:extra");
         assert!(result.is_err());
     }
 
@@ -633,7 +633,7 @@ mod tests {
     #[test]
     fn test_from_image_spec_rejects_shell_metacharacters() {
         let result = VmImage::from_image_spec(
-            "MicrosoftCBLMariner:azure-linux-4;rm -rf /:azure-linux-4-gen2:latest",
+            "microsoftazurelinux:azurelinux-4;rm -rf /:4:latest",
         );
         assert!(result.is_err());
     }
@@ -641,7 +641,7 @@ mod tests {
     #[test]
     fn test_from_image_spec_rejects_newlines() {
         let result = VmImage::from_image_spec(
-            "MicrosoftCBLMariner:azure-linux-4\n:azure-linux-4-gen2:latest",
+            "microsoftazurelinux:azurelinux-4\n:4:latest",
         );
         assert!(result.is_err());
     }
@@ -649,7 +649,7 @@ mod tests {
     #[test]
     fn test_from_image_spec_rejects_null_bytes() {
         let result = VmImage::from_image_spec(
-            "MicrosoftCBLMariner:azure-linux-4\0:azure-linux-4-gen2:latest",
+            "microsoftazurelinux:azurelinux-4\0:4:latest",
         );
         assert!(result.is_err());
     }
@@ -664,7 +664,7 @@ mod tests {
     fn test_from_image_spec_roundtrip_via_display() {
         // Parse a full URN, display it, re-parse — should be identical
         let original =
-            VmImage::from_image_spec("MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest").unwrap();
+            VmImage::from_image_spec("microsoftazurelinux:azurelinux-4:4:latest").unwrap();
         let displayed = original.to_string();
         let reparsed = VmImage::from_image_spec(&displayed).unwrap();
         assert_eq!(original, reparsed);

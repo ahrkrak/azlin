@@ -54,7 +54,8 @@ pub fn reconnect_prompt(attempt: u32, max_retries: u32) -> String {
 pub fn format_os_display(os_offer: Option<&str>, os_type: &azlin_core::models::OsType) -> String {
     if let Some(offer) = os_offer {
         let lower = offer.to_lowercase();
-        if lower.contains("azure-linux-4")
+        if lower.contains("azurelinux")
+            || lower.contains("azure-linux-4")
             || lower.contains("microsoftcblmariner")
             || lower.contains("cbl-mariner")
         {

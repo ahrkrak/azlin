@@ -161,9 +161,9 @@ pub fn render_dev_cloud_init_script_with_disks(
     // Pre-allocate ~10KB for the generated script to avoid repeated reallocations
     let mut script = String::with_capacity(10 * 1024);
     script.push_str("#!/bin/bash\nset -euo pipefail\n\n");
-    script.push_str("apt-get update -qq\n");
-    script.push_str("apt-get upgrade -y -qq\n\n");
-    script.push_str("apt-get install -y -qq \\\n");
+    script.push_str("tdnf makecache -y\n");
+    script.push_str("tdnf upgrade -y\n\n");
+    script.push_str("tdnf install -y \\\n");
 
     for (idx, package) in packages.iter().enumerate() {
         script.push_str("    ");
@@ -257,75 +257,50 @@ pub fn render_dev_cloud_init_script_with_disks(
     script
 }
 
-/// Default packages for development VMs
 /// Default setup commands for development VMs (run after packages install).
 ///
-/// These install toolchains that aren't available as apt packages, matching
-/// the full Python azlin provisioning (gh, az, node, claude, rust, go, .NET).
+/// These install toolchains that aren't available as tdnf packages, matching
+/// the full Python azlin provisioning (gh, node, claude, rust, go, .NET, uv).
+/// Azure CLI is installed via the `azure-cli` tdnf package (see
+/// `default_dev_packages`); Python 3.14 ships natively on Azure Linux 4.0.
 pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
     vec![
-        // Python 3.14 - install via deadsnakes but do NOT change system python3
-        "if python3.14 --version 2>/dev/null; then echo 'Python 3.14 available'; else add-apt-repository -y ppa:deadsnakes/ppa && apt update && apt install -y python3.14 python3.14-venv python3.14-dev || echo 'WARNING: Python 3.14 install failed'; fi".to_string(),
-        // GitHub CLI
-        "mkdir -p -m 755 /etc/apt/keyrings && wget -nv -O /etc/apt/keyrings/githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && mkdir -p -m 755 /etc/apt/sources.list.d && echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && apt update && apt install -y gh".to_string(),
-        // Azure CLI
-        "curl -sL https://aka.ms/InstallAzureCLIDeb | bash".to_string(),
-        // Chromium (Azure Linux 4.0 ships this as a snap-backed launcher)
-        "apt-get install -y chromium-browser".to_string(),
-        // Chromium wrappers so SSH/X11 launches use a scoped user session instead of
-        // failing with the snap cgroup error.
-        r#"cat > /usr/local/bin/chromium-browser << 'CHROMIUMWRAP'
-#!/bin/sh
-set -eu
-
-REAL_COMMAND=/usr/bin/chromium-browser
-if [ ! -x "$REAL_COMMAND" ]; then
-    REAL_COMMAND=/snap/bin/chromium
-fi
-
-if [ -z "${XDG_RUNTIME_DIR:-}" ] && [ -d "/run/user/$(id -u)" ]; then
-    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-fi
-
-if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
-    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
-fi
-
-if command -v snap >/dev/null 2>&1 && snap list chromium >/dev/null 2>&1; then
-    if ! command -v systemd-run >/dev/null 2>&1 || ! command -v systemctl >/dev/null 2>&1; then
-        echo "Chromium requires systemd user scope support on this VM, but systemd tooling is unavailable." >&2
-        exit 1
-    fi
-    if ! systemctl --user show-environment >/dev/null 2>&1; then
-        echo "Chromium requires an active systemd user environment on this VM. Check linger/user-systemd setup." >&2
-        exit 1
-    fi
-    exec systemd-run --user --scope --quiet -- "$REAL_COMMAND" "$@"
-fi
-
-exec "$REAL_COMMAND" "$@"
-CHROMIUMWRAP
-chmod 755 /usr/local/bin/chromium-browser
-
-cat > /usr/local/bin/chromium << 'CHROMIUMALIAS'
-#!/bin/sh
-exec /usr/local/bin/chromium-browser "$@"
-CHROMIUMALIAS
-chmod 755 /usr/local/bin/chromium"#.to_string(),
-        // astral-uv (uv package manager)
-        "snap install astral-uv --classic || true".to_string(),
-        // Node.js 24 LTS (via NodeSource)
-        "curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && apt install -y nodejs".to_string(),
+        // Python 3.14 ships natively as the `python3` package on Azure Linux 4.0.
+        "python3 --version".to_string(),
+        // GitHub CLI (no tdnf package; install the official prebuilt binary)
+        "ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
+            URL=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep browser_download_url | grep \"linux_${ARCH}.tar.gz\\\"\" | head -1 | cut -d\\\" -f4) && \
+            mkdir -p /tmp/gh-install && cd /tmp/gh-install && \
+            curl -fsSL \"$URL\" -o gh.tar.gz && tar xzf gh.tar.gz && \
+            cp gh_*/bin/gh /usr/local/bin/gh && chmod 755 /usr/local/bin/gh && \
+            cd / && rm -rf /tmp/gh-install || echo 'WARNING: GitHub CLI installation failed'".to_string(),
+        // Chromium: no tdnf package and no snapd on Azure Linux 4.0, so a GUI
+        // browser cannot be provisioned automatically. Leave a clear signal
+        // for `azlin gui` users instead of silently failing.
+        "echo 'NOTE: Chromium is not packaged for Azure Linux 4.0 and snapd is unavailable; skipping browser install. Install manually if needed for azlin gui.'".to_string(),
+        // astral-uv (official installer; no tdnf package, no snapd)
+        format!("su - {u} -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || echo 'WARNING: uv installation failed'", u = username),
+        // Node.js 24 LTS (official prebuilt tarball; NodeSource does not support Azure Linux)
+        "ARCH=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/') && \
+            VER=$(curl -fsSL https://nodejs.org/dist/latest-v24.x/ | grep -oE \"node-v24\\.[0-9]+\\.[0-9]+-linux-${ARCH}\\.tar\\.xz\" | head -1) && \
+            curl -fsSL \"https://nodejs.org/dist/latest-v24.x/${VER}\" -o /tmp/node.tar.xz && \
+            mkdir -p /usr/local/lib/nodejs && tar -xJf /tmp/node.tar.xz -C /usr/local/lib/nodejs && rm /tmp/node.tar.xz && \
+            NODEDIR=$(find /usr/local/lib/nodejs -maxdepth 1 -name 'node-v24*' | head -1) && \
+            for b in node npm npx; do ln -sf \"$NODEDIR/bin/$b\" \"/usr/local/bin/$b\"; done || echo 'WARNING: Node.js installation failed'".to_string(),
         // npm user-local configuration
         format!("mkdir -p /home/{u}/.npm-packages && echo 'prefix=${{HOME}}/.npm-packages' > /home/{u}/.npmrc && chown {u}:{u} /home/{u}/.npmrc /home/{u}/.npm-packages", u = username),
         // Tmux configuration
-        format!("printf '[%%s] %%s\\n' \"$(hostname)\" \"tmux.conf\" && cat > /home/{u}/.tmux.conf << 'TMUXEOF'\nset -g status-left-length 50\nset -g status-left \"#[fg=cyan][#h]#[fg=green] #S #[fg=yellow]| \"\nset -g status-right \"#[fg=cyan]%%Y-%%m-%%d %%H:%%M\"\nset -g status-interval 60\nset -g status-bg black\nset -g status-fg white\nTMUXEOF\nchown {u}:{u} /home/{u}/.tmux.conf", u = username),
+        format!("printf '[%%s] %%s\n' \"$(hostname)\" \"tmux.conf\" && cat > /home/{u}/.tmux.conf << 'TMUXEOF'\nset -g status-left-length 50\nset -g status-left \"#[fg=cyan][#h]#[fg=green] #S #[fg=yellow]| \"\nset -g status-right \"#[fg=cyan]%%Y-%%m-%%d %%H:%%M\"\nset -g status-interval 60\nset -g status-bg black\nset -g status-fg white\nTMUXEOF\nchown {u}:{u} /home/{u}/.tmux.conf", u = username),
         // Fix tmux socket dir permissions (Azure Linux 4.0+)
         format!("chmod 1777 /tmp && TMUX_UID=$(id -u {u}) && mkdir -p /tmp/tmux-$TMUX_UID && chmod 700 /tmp/tmux-$TMUX_UID && chown {u}:{u} /tmp/tmux-$TMUX_UID", u = username),
         // Claude Code AI Assistant
         format!("su - {u} -c 'curl -fsSL https://claude.ai/install.sh | bash' || echo 'WARNING: Claude Code installation failed'", u = username),
         // Rust
         format!("su - {u} -c 'curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'", u = username),
+        // fd-find (no tdnf package; install via cargo now that rustup is available)
+        format!("su - {u} -c 'source $HOME/.cargo/env && cargo install fd-find' || echo 'WARNING: fd-find installation failed'", u = username),
+        // pipx (no tdnf package; install via pip --user)
+        format!("su - {u} -c 'python3 -m pip install --user pipx' || echo 'WARNING: pipx installation failed'", u = username),
         // amplihack-rs (pre-built binary from latest GitHub release, falls back to cargo install)
         format!("su - {u} -c 'ARCH=$(uname -m | sed s/aarch64/aarch64/ | sed s/x86_64/x86_64/) && \
             URL=$(curl -fsSL https://api.github.com/repos/rysweet/amplihack-rs/releases/latest | grep browser_download_url | grep $ARCH-unknown-linux-gnu.tar.gz\\\" | head -1 | cut -d\\\"  -f4) && \
@@ -350,7 +325,6 @@ chmod 755 /usr/local/bin/chromium"#.to_string(),
         // Docker post-install
         format!("usermod -aG docker {u} && systemctl enable docker && systemctl start docker", u = username),
         // Enable systemd user linger so SSH sessions get a systemd user instance
-        // (required for snap Chromium cgroup scoping via systemd-run --user)
         format!("loginctl enable-linger {u}", u = username),
         // bashrc additions (npm path, go path, cargo env, azlin alias)
         format!("cat >> /home/{u}/.bashrc << 'BASHEOF'\n\n# npm user-local configuration\nNPM_PACKAGES=\"${{HOME}}/.npm-packages\"\nPATH=\"$NPM_PACKAGES/bin:$PATH\"\nMANPATH=\"$NPM_PACKAGES/share/man:$(manpath 2>/dev/null || echo $MANPATH)\"\n\n# Go\nexport PATH=$PATH:/usr/local/go/bin\n\n# Cargo\nsource $HOME/.cargo/env 2>/dev/null\nBASHEOF", u = username),
@@ -361,29 +335,31 @@ chmod 755 /usr/local/bin/chromium"#.to_string(),
     ]
 }
 
-/// Default packages for development VMs (installed via apt).
+/// Default packages for development VMs (installed via tdnf on Azure Linux).
 /// Returns a static slice to avoid heap allocation on each call.
 pub fn default_dev_packages() -> &'static [&'static str] {
     &[
-        "docker.io",
+        "moby-engine",
+        "docker-cli",
         "git",
         "tmux",
         "curl",
-        "wget",
-        "build-essential",
+        "wget2-wget",
+        "gcc",
         "make",
+        "binutils",
+        "glibc-devel",
+        "kernel-headers",
         "cmake",
-        "software-properties-common",
         "ripgrep",
-        "fd-find",
         "python3-pip",
-        "pipx",
         "jq",
         "unzip",
         "xdg-utils",
-        "htop",
         "tree",
-        "vim",
+        "vim-enhanced",
+        "azure-cli",
+        "libicu",
     ]
 }
 
@@ -450,14 +426,14 @@ mod tests {
     fn test_default_dev_packages() {
         let pkgs = default_dev_packages();
         assert!(pkgs.contains(&"git"));
-        assert!(pkgs.contains(&"docker.io"));
+        assert!(pkgs.contains(&"moby-engine"));
+        assert!(pkgs.contains(&"docker-cli"));
         assert!(pkgs.contains(&"python3-pip"));
         assert!(pkgs.contains(&"ripgrep"));
         assert!(pkgs.contains(&"make"));
-        assert!(pkgs.contains(&"fd-find"));
-        assert!(pkgs.contains(&"pipx"));
         assert!(pkgs.contains(&"xdg-utils"));
-        assert!(pkgs.contains(&"software-properties-common"));
+        assert!(pkgs.contains(&"azure-cli"));
+        assert!(pkgs.contains(&"libicu"));
         assert!(pkgs.len() >= 10);
     }
 
@@ -473,15 +449,12 @@ mod tests {
             "Missing .NET install command"
         );
         assert!(
-            cmds.iter().any(|c| c.contains("apt install -y gh")),
+            cmds.iter()
+                .any(|c| c.contains("cli/cli/releases/latest") && c.contains("/usr/local/bin/gh")),
             "Missing GitHub CLI install command"
         );
         assert!(
-            cmds.iter().any(|c| c.contains("InstallAzureCLIDeb")),
-            "Missing Azure CLI install command"
-        );
-        assert!(
-            cmds.iter().any(|c| c.contains("nodesource.com")),
+            cmds.iter().any(|c| c.contains("nodejs.org")),
             "Missing Node.js install command"
         );
         assert!(
@@ -504,7 +477,7 @@ mod tests {
         assert!(
             cmds.iter()
                 .any(|c| c.contains("loginctl enable-linger azureuser")),
-            "default_dev_setup_commands must enable systemd user linger for snap Chromium cgroup support"
+            "default_dev_setup_commands must enable systemd user linger for SSH user sessions"
         );
     }
 
@@ -519,35 +492,11 @@ mod tests {
     }
 
     #[test]
-    fn test_default_dev_setup_commands_install_chromium_and_wrappers() {
+    fn test_default_dev_setup_commands_warns_chromium_unavailable() {
         let cmds = default_dev_setup_commands("azureuser");
         assert!(
-            cmds.iter()
-                .any(|c| c.contains("apt-get install -y chromium-browser")),
-            "default_dev_setup_commands must install chromium-browser"
-        );
-        assert!(
-            cmds.iter()
-                .any(|c| c.contains("cat > /usr/local/bin/chromium-browser << 'CHROMIUMWRAP'")),
-            "default_dev_setup_commands must install the chromium-browser wrapper"
-        );
-        assert!(
-            cmds.iter()
-                .any(|c| c.contains("exec /usr/local/bin/chromium-browser \"$@\"")),
-            "default_dev_setup_commands must install the chromium alias wrapper"
-        );
-    }
-
-    #[test]
-    fn test_default_dev_setup_commands_chromium_wrapper_fails_loudly_when_scope_unavailable() {
-        let cmds = default_dev_setup_commands("azureuser");
-        assert!(
-            cmds.iter().any(|c| c.contains("Chromium requires systemd user scope support on this VM, but systemd tooling is unavailable.")),
-            "default_dev_setup_commands must fail loudly when user-systemd tooling is missing"
-        );
-        assert!(
-            cmds.iter().any(|c| c.contains("Chromium requires an active systemd user environment on this VM. Check linger/user-systemd setup.")),
-            "default_dev_setup_commands must fail loudly when the user systemd environment is unavailable"
+            cmds.iter().any(|c| c.contains("Chromium is not packaged for Azure Linux 4.0")),
+            "default_dev_setup_commands must warn that Chromium cannot be auto-installed"
         );
     }
 

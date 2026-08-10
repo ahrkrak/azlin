@@ -260,7 +260,7 @@ pub enum Commands {
         #[arg(long)]
         tmp_disk_size: Option<u32>,
 
-        /// OS image (e.g., azurelinux4, azure-linux-4, or full URN like MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest; default: Azure Linux 4.0)
+        /// OS image (e.g., azurelinux4, azure-linux-4, or full URN like microsoftazurelinux:azurelinux-4:4:latest; default: Azure Linux 4.0)
         #[arg(long)]
         os: Option<String>,
     },

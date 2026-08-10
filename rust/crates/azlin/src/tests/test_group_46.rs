@@ -19,6 +19,16 @@ fn test_format_os_display_azure_linux_gen2() {
 }
 
 #[test]
+fn test_format_os_display_azurelinux_real_offer() {
+    // Real Azure Marketplace offer string: microsoftazurelinux:azurelinux-4:4:latest
+    let result = crate::display_helpers::format_os_display(
+        Some("azurelinux-4"),
+        &azlin_core::models::OsType::Linux,
+    );
+    assert_eq!(result, "Azure Linux 4.0");
+}
+
+#[test]
 fn test_format_os_display_microsoftcblmariner() {
     let result = crate::display_helpers::format_os_display(
         Some("MicrosoftCBLMariner"),
