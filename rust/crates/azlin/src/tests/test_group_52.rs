@@ -120,9 +120,9 @@ fn test_vscode_uri_ssh_remote_prefix() {
 }
 
 #[test]
-fn test_build_log_follow_args_structure() {
+fn test_build_remote_command_args_structure() {
     let args =
-        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/messages", 10);
+        crate::connect_helpers::build_remote_command_args("admin", "10.0.0.1", "sudo tail -f /var/log/messages", 10);
     assert!(args.contains(&"admin@10.0.0.1".to_string()));
     assert!(args.iter().any(|a| a.contains("tail -f")));
     assert!(args.iter().any(|a| a.contains("/var/log/messages")));
@@ -150,54 +150,6 @@ fn test_build_dev_update_script_not_empty() {
 fn test_build_os_update_cmd_contains_dnf5() {
     let cmd = crate::update_helpers::build_os_update_cmd();
     assert!(cmd.contains("dnf5 upgrade"));
-}
-
-#[test]
-fn test_log_path_cloud_init_variant() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("cloud-init"),
-        "/var/log/cloud-init-output.log"
-    );
-}
-
-#[test]
-fn test_log_path_syslog_variant() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/messages"
-    );
-}
-
-#[test]
-fn test_log_path_auth_variant() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/secure"
-    );
-}
-
-#[test]
-fn test_log_path_capitalized_names() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/messages"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/secure"
-    );
-}
-
-#[test]
-fn test_log_path_unknown_fallback_syslog() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("garbage"),
-        "/var/log/messages"
-    );
 }
 
 // ── tag_helpers ─────────────────────────────────────────────────

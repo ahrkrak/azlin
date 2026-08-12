@@ -20,13 +20,3 @@ pub fn build_os_update_cmd() -> &'static str {
     "sudo dnf5 upgrade -y -q"
 }
 
-/// Map a log type name to its file path on the remote VM.
-#[allow(dead_code)]
-pub fn log_type_to_path(log_type: &str) -> &'static str {
-    match log_type {
-        "cloud-init" | "CloudInit" => "/var/log/cloud-init-output.log",
-        "syslog" | "Syslog" => "/var/log/messages",
-        "auth" | "Auth" => "/var/log/secure",
-        _ => "/var/log/messages",
-    }
-}

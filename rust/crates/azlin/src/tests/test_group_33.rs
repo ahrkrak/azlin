@@ -138,11 +138,11 @@ fn test_build_vscode_remote_uri() {
 }
 
 #[test]
-fn test_build_log_follow_args() {
-    let args = crate::connect_helpers::build_log_follow_args(
+fn test_build_remote_command_args() {
+    let args = crate::connect_helpers::build_remote_command_args(
         "azureuser",
         "10.0.0.5",
-        "/var/log/messages",
+        "sudo tail -f /var/log/messages",
         10,
     );
     assert_eq!(args.len(), 6);
@@ -181,50 +181,6 @@ fn test_build_dev_update_script_contains_sections() {
 fn test_build_os_update_cmd() {
     let cmd = crate::update_helpers::build_os_update_cmd();
     assert!(cmd.contains("dnf5 upgrade"));
-}
-
-#[test]
-fn test_log_type_to_path_cloud_init() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("cloud-init"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_syslog() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/messages"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/messages"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_auth() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/secure"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/secure"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_unknown_defaults_syslog() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("something-else"),
-        "/var/log/messages"
-    );
 }
 
 // ── compose_helpers tests ───────────────────────────────────────

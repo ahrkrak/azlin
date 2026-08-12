@@ -276,13 +276,23 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
     vec![
         // Python 3.14 ships natively as the `python3` package on Azure Linux 4.0.
         "python3 --version".to_string(),
-        // GitHub CLI (no dnf5 package; install the official prebuilt binary)
+        // GitHub CLI (no dnf5 package; install the official prebuilt binary).
+        // The GitHub API is rate-limited per source IP and Azure egress IPs are heavily
+        // shared, so the version lookup regularly fails during provisioning. Fall back to
+        // a pinned release and verify the download really is a gzip before unpacking --
+        // otherwise `tar` fails on an HTML error page and gh silently never installs.
         "ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
-            URL=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep browser_download_url | grep \"linux_${ARCH}.tar.gz\\\"\" | head -1 | cut -d\\\" -f4) && \
-            mkdir -p /tmp/gh-install && cd /tmp/gh-install && \
-            curl -fsSL \"$URL\" -o gh.tar.gz && tar xzf gh.tar.gz && \
-            cp gh_*/bin/gh /usr/local/bin/gh && chmod 755 /usr/local/bin/gh && \
-            cd / && rm -rf /tmp/gh-install || echo 'WARNING: GitHub CLI installation failed'".to_string(),
+            VER=$(curl -fsSL --retry 3 --retry-delay 2 https://api.github.com/repos/cli/cli/releases/latest \
+                | sed -n 's/.*\"tag_name\": *\"v\\([^\"]*\\)\".*/\\1/p' | head -1) && \
+            VER=${VER:-2.97.0} && \
+            URL=\"https://github.com/cli/cli/releases/download/v${VER}/gh_${VER}_linux_${ARCH}.tar.gz\" && \
+            rm -rf /tmp/gh-install && mkdir -p /tmp/gh-install && cd /tmp/gh-install && \
+            curl -fsSL --retry 3 --retry-delay 2 \"$URL\" -o gh.tar.gz && \
+            gzip -t gh.tar.gz && \
+            tar xzf gh.tar.gz && \
+            install -m 755 gh_*/bin/gh /usr/local/bin/gh && \
+            cd / && rm -rf /tmp/gh-install && gh --version \
+            || echo '[AZLIN] WARNING: GitHub CLI installation failed' >&2".to_string(),
         // Chromium: no dnf5 package and no snapd on Azure Linux 4.0, so a GUI
         // browser cannot be provisioned automatically. Leave a clear signal
         // for `azlin gui` users instead of silently failing.
