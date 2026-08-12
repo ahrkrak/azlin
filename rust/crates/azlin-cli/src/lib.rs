@@ -2905,7 +2905,7 @@ mod tests {
 
     #[test]
     fn test_fleet_run() {
-        let cli = Cli::parse_from(["azlin", "fleet", "run", "tdnf update", "--all", "--dry-run"]);
+        let cli = Cli::parse_from(["azlin", "fleet", "run", "dnf5 upgrade", "--all", "--dry-run"]);
         if let Commands::Fleet {
             action:
                 FleetAction::Run {
@@ -2916,7 +2916,7 @@ mod tests {
                 },
         } = cli.command
         {
-            assert_eq!(command, "tdnf update");
+            assert_eq!(command, "dnf5 upgrade");
             assert!(all);
             assert!(dry_run);
         } else {

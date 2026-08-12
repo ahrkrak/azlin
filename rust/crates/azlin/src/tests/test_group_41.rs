@@ -221,7 +221,7 @@ fn test_build_log_tail_args_custom_lines() {
 #[test]
 fn test_build_dev_update_script_all_sections() {
     let script = crate::update_helpers::build_dev_update_script();
-    assert!(script.contains("tdnf update"));
+    assert!(script.contains("dnf5 upgrade"));
     assert!(script.contains("rustup"));
     assert!(script.contains("pip3"));
     assert!(script.contains("npm"));
@@ -230,7 +230,7 @@ fn test_build_dev_update_script_all_sections() {
 #[test]
 fn test_build_os_update_cmd_format() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("tdnf update"));
+    assert!(cmd.contains("dnf5 upgrade"));
 }
 
 #[test]

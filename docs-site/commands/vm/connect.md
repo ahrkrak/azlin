@@ -458,7 +458,7 @@ fi
 
 # Parallel command execution
 for vm in vm1 vm2 vm3; do
-    azlin connect $vm -- tdnf update &
+    azlin connect $vm -- dnf5 upgrade &
 done
 wait
 ```

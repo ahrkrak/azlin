@@ -131,7 +131,7 @@ All batch commands support these options:
 
 ```bash
 # Update packages on all dev VMs
-azlin batch command 'sudo tdnf update -y' \
+azlin batch command 'sudo dnf5 upgrade -y' \
   --tag env=dev \
   --show-output
 ```
@@ -207,7 +207,7 @@ Commands have a default 300-second (5 minute) timeout:
 azlin batch command 'hostname' --all --timeout 30
 
 # Long-running operations
-azlin batch command 'tdnf update -y' --all --timeout 1800
+azlin batch command 'dnf5 upgrade -y' --all --timeout 1800
 ```
 
 ## Safety Features
@@ -366,7 +366,7 @@ azlin batch command 'uptime' --vm-pattern 'web*' --show-output
 **Solution:**
 ```bash
 # Increase timeout for long operations
-azlin batch command 'tdnf update -y' \
+azlin batch command 'dnf5 upgrade -y' \
   --all \
   --timeout 1800
 ```

@@ -2440,7 +2440,7 @@ class PSCommandExecutor:
 
 ##### `OSUpdateExecutor`
 
-Execute OS package updates (`tdnf update`).
+Execute OS package updates (`dnf5 upgrade`).
 
 ```python
 class OSUpdateExecutor:

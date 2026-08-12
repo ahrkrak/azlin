@@ -4,7 +4,7 @@ Update Azure Linux 4.0 system packages on azlin VMs for security and stability.
 
 ## Description
 
-Run Azure Linux 4.0 package updates (`tdnf update`) on VMs. Apply security patches, update system libraries, and maintain VM health.
+Run Azure Linux 4.0 package updates (`dnf5 upgrade`) on VMs. Apply security patches, update system libraries, and maintain VM health.
 
 ## Usage
 
@@ -40,7 +40,7 @@ Updating Azure Linux 4.0 packages on 'my-dev-vm'...
 Connecting to VM...
 ✓ Connected
 
-Running: sudo tdnf update
+Running: sudo dnf5 upgrade
 Refreshing metadata and resolving package dependencies...
 Found 36 updates available.
 Downloading package metadata...
@@ -160,7 +160,7 @@ azlin fleet update --tag env=production --os-packages
 The command runs:
 
 ```bash
-sudo tdnf update         # Refresh metadata and install available updates
+sudo dnf5 upgrade         # Refresh metadata and install available updates
 ```
 
 **Updated components:**
@@ -249,7 +249,7 @@ azlin os-update my-vm --timeout 900
 
 # Or SSH and update manually
 azlin connect my-vm
-sudo tdnf update -y
+sudo dnf5 upgrade -y
 ```
 
 ### Package Lock Held
@@ -258,9 +258,9 @@ sudo tdnf update -y
 
 **Solution:**
 ```bash
-# Wait for other tdnf processes to complete
+# Wait for other dnf5 processes to complete
 azlin connect my-vm
-ps -ef | grep tdnf
+ps -ef | grep dnf5
 # Kill if safe, or wait
 ```
 
@@ -271,8 +271,8 @@ ps -ef | grep tdnf
 **Solution:**
 ```bash
 azlin connect my-vm
-sudo tdnf distro-sync -y
-sudo tdnf update -y
+sudo dnf5 distro-sync -y
+sudo dnf5 upgrade -y
 ```
 
 ## Related Commands

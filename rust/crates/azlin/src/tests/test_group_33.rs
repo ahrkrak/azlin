@@ -171,7 +171,7 @@ fn test_build_dev_update_script_contains_sections() {
     let script = crate::update_helpers::build_dev_update_script();
     assert!(script.starts_with("#!/bin/bash"));
     assert!(script.contains("set -e"));
-    assert!(script.contains("tdnf update"));
+    assert!(script.contains("dnf5 upgrade"));
     assert!(script.contains("rustup update"));
     assert!(script.contains("pip3 install"));
     assert!(script.contains("npm install"));
@@ -180,7 +180,7 @@ fn test_build_dev_update_script_contains_sections() {
 #[test]
 fn test_build_os_update_cmd() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("tdnf update"));
+    assert!(cmd.contains("dnf5 upgrade"));
 }
 
 #[test]

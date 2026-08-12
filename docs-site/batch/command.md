@@ -54,7 +54,7 @@ Completed: 3/3 VMs
 ### Update Packages on Development VMs
 
 ```bash
-azlin batch command 'sudo tdnf update -y' \
+azlin batch command 'sudo dnf5 upgrade -y' \
   --tag env=dev \
   --timeout 600
 ```
@@ -87,12 +87,12 @@ azlin batch command 'bash /tmp/deploy.sh' \
 
 ```bash
 # Update all dev VMs
-azlin batch command 'sudo tdnf update -y' \
+azlin batch command 'sudo dnf5 upgrade -y' \
   --tag env=dev \
   --timeout 900
 
 # Install new package fleet-wide
-azlin batch command 'sudo tdnf install -y htop' --all
+azlin batch command 'sudo dnf5 install -y htop' --all
 ```
 
 ### 2. Configuration Deploy

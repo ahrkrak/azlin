@@ -392,7 +392,7 @@ azlin vm update-tools my-vm --timeout 600
 ```
 
 **What gets updated**:
-- System packages (`tdnf update`)
+- System packages (`dnf5 upgrade`)
 - Rust toolchain (`rustup update`)
 - Python package manager (`pip install --upgrade pip`)
 - Node.js package manager (`npm install -g npm`)
@@ -401,7 +401,7 @@ azlin vm update-tools my-vm --timeout 600
 
 ### `azlin os-update` - Update Azure Linux 4.0 packages
 
-Run system package updates (`tdnf update`).
+Run system package updates (`dnf5 upgrade`).
 
 ```bash
 # Update OS packages by session name
@@ -415,7 +415,7 @@ azlin os-update my-vm --timeout 600
 ```
 
 **What happens**:
-1. `sudo tdnf update` - Refresh metadata and install updates
+1. `sudo dnf5 upgrade` - Refresh metadata and install updates
 2. Non-interactive mode applies available updates
 
 **Time**: 30 seconds to 10 minutes

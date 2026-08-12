@@ -161,9 +161,9 @@ pub fn render_dev_cloud_init_script_with_disks(
     // Pre-allocate ~10KB for the generated script to avoid repeated reallocations
     let mut script = String::with_capacity(10 * 1024);
     script.push_str("#!/bin/bash\nset -euo pipefail\n\n");
-    script.push_str("tdnf makecache -y\n");
-    script.push_str("tdnf upgrade -y\n\n");
-    script.push_str("tdnf install -y \\\n");
+    script.push_str("dnf5 makecache -y\n");
+    script.push_str("dnf5 upgrade -y\n\n");
+    script.push_str("dnf5 install -y \\\n");
 
     for (idx, package) in packages.iter().enumerate() {
         script.push_str("    ");
@@ -259,26 +259,26 @@ pub fn render_dev_cloud_init_script_with_disks(
 
 /// Default setup commands for development VMs (run after packages install).
 ///
-/// These install toolchains that aren't available as tdnf packages, matching
+/// These install toolchains that aren't available as dnf5 packages, matching
 /// the full Python azlin provisioning (gh, node, claude, rust, go, .NET, uv).
-/// Azure CLI is installed via the `azure-cli` tdnf package (see
+/// Azure CLI is installed via the `azure-cli` dnf5 package (see
 /// `default_dev_packages`); Python 3.14 ships natively on Azure Linux 4.0.
 pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
     vec![
         // Python 3.14 ships natively as the `python3` package on Azure Linux 4.0.
         "python3 --version".to_string(),
-        // GitHub CLI (no tdnf package; install the official prebuilt binary)
+        // GitHub CLI (no dnf5 package; install the official prebuilt binary)
         "ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
             URL=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep browser_download_url | grep \"linux_${ARCH}.tar.gz\\\"\" | head -1 | cut -d\\\" -f4) && \
             mkdir -p /tmp/gh-install && cd /tmp/gh-install && \
             curl -fsSL \"$URL\" -o gh.tar.gz && tar xzf gh.tar.gz && \
             cp gh_*/bin/gh /usr/local/bin/gh && chmod 755 /usr/local/bin/gh && \
             cd / && rm -rf /tmp/gh-install || echo 'WARNING: GitHub CLI installation failed'".to_string(),
-        // Chromium: no tdnf package and no snapd on Azure Linux 4.0, so a GUI
+        // Chromium: no dnf5 package and no snapd on Azure Linux 4.0, so a GUI
         // browser cannot be provisioned automatically. Leave a clear signal
         // for `azlin gui` users instead of silently failing.
         "echo 'NOTE: Chromium is not packaged for Azure Linux 4.0 and snapd is unavailable; skipping browser install. Install manually if needed for azlin gui.'".to_string(),
-        // astral-uv (official installer; no tdnf package, no snapd)
+        // astral-uv (official installer; no dnf5 package, no snapd)
         format!("su - {u} -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || echo 'WARNING: uv installation failed'", u = username),
         // Node.js 24 LTS (official prebuilt tarball; NodeSource does not support Azure Linux)
         "ARCH=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/') && \
@@ -297,9 +297,9 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
         format!("su - {u} -c 'curl -fsSL https://claude.ai/install.sh | bash' || echo 'WARNING: Claude Code installation failed'", u = username),
         // Rust
         format!("su - {u} -c 'curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'", u = username),
-        // fd-find (no tdnf package; install via cargo now that rustup is available)
+        // fd-find (no dnf5 package; install via cargo now that rustup is available)
         format!("su - {u} -c 'source $HOME/.cargo/env && cargo install fd-find' || echo 'WARNING: fd-find installation failed'", u = username),
-        // pipx (no tdnf package; install via pip --user)
+        // pipx (no dnf5 package; install via pip --user)
         format!("su - {u} -c 'python3 -m pip install --user pipx' || echo 'WARNING: pipx installation failed'", u = username),
         // amplihack-rs (pre-built binary from latest GitHub release, falls back to cargo install)
         format!("su - {u} -c 'ARCH=$(uname -m | sed s/aarch64/aarch64/ | sed s/x86_64/x86_64/) && \
@@ -335,7 +335,7 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
     ]
 }
 
-/// Default packages for development VMs (installed via tdnf on Azure Linux).
+/// Default packages for development VMs (installed via dnf5 on Azure Linux).
 /// Returns a static slice to avoid heap allocation on each call.
 pub fn default_dev_packages() -> &'static [&'static str] {
     &[

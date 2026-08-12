@@ -106,7 +106,7 @@ permissions on your home directory.
 
 ```bash
 # Ubuntu/Debian
-sudo tdnf install openssh-client
+sudo apt install openssh-client
 
 # macOS (pre-installed)
 

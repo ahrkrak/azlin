@@ -141,15 +141,15 @@ fn test_log_tail_args_includes_line_count() {
 fn test_build_dev_update_script_not_empty() {
     let script = crate::update_helpers::build_dev_update_script();
     assert!(script.starts_with("#!/bin/bash\n"));
-    assert!(script.contains("tdnf update"));
+    assert!(script.contains("dnf5 upgrade"));
     assert!(script.contains("rustup update"));
     assert!(script.contains("npm install"));
 }
 
 #[test]
-fn test_build_os_update_cmd_contains_apt() {
+fn test_build_os_update_cmd_contains_dnf5() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("tdnf update"));
+    assert!(cmd.contains("dnf5 upgrade"));
 }
 
 #[test]

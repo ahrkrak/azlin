@@ -285,7 +285,7 @@ tmux kill-session -t <session-name>
 **Solution**: Update tmux on the VM:
 ```bash
 # Ubuntu/Debian
-sudo tdnf install tmux
+sudo apt install tmux
 
 # RHEL/CentOS
 sudo yum update tmux

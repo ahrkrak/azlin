@@ -307,7 +307,7 @@ az ad app show --id <client-id> --query "publicClient.allowDeviceCodeFlow"
 **Solution**:
 ```bash
 # SSH to VM and install tmux
-sudo tdnf install -y tmux
+sudo dnf5 install -y tmux
 
 # Start a session
 tmux new -s test-session

@@ -401,7 +401,7 @@ Azure Linux 4.0 available via:
 #### Post-Launch Setup Compatibility Analysis
 
 Reviewed cloud-init script in `vm_provisioning.py:702-799`:
-- ✅ All package managers compatible (tdnf and Azure Linux package sources)
+- ✅ All package managers compatible (dnf5 and Azure Linux package sources)
 - ✅ All packages available on Azure Linux 4.0
 - ✅ Python 3.13 from Azure Linux 4.0 Python package flow
 - ✅ GitHub CLI - architecture-independent
