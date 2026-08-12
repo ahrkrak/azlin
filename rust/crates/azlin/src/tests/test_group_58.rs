@@ -10,23 +10,23 @@ fn test_update_log_type_to_path() {
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("unknown"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }
 
@@ -81,9 +81,9 @@ fn test_autopilot_build_cost_scope() {
 #[test]
 fn test_connect_build_log_follow_args() {
     let args =
-        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/syslog", 10);
+        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/messages", 10);
     assert!(args.contains(&format!("admin@10.0.0.1")));
-    assert!(args.contains(&"sudo tail -f /var/log/syslog".to_string()));
+    assert!(args.contains(&"sudo tail -f /var/log/messages".to_string()));
     assert!(args.contains(&"ConnectTimeout=10".to_string()));
 }
 

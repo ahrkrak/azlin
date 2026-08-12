@@ -25,8 +25,8 @@ pub fn build_os_update_cmd() -> &'static str {
 pub fn log_type_to_path(log_type: &str) -> &'static str {
     match log_type {
         "cloud-init" | "CloudInit" => "/var/log/cloud-init-output.log",
-        "syslog" | "Syslog" => "/var/log/syslog",
-        "auth" | "Auth" => "/var/log/auth.log",
-        _ => "/var/log/syslog",
+        "syslog" | "Syslog" => "/var/log/messages",
+        "auth" | "Auth" => "/var/log/secure",
+        _ => "/var/log/messages",
     }
 }

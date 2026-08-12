@@ -971,10 +971,10 @@ mod tests {
     #[test]
     fn test_set_field_consecutive_sets_produce_valid_toml() {
         let config = AzlinConfig::default();
-        let (toml1, c1) = simulate_set_field(&config, "az_cli_timeout", "300");
+        let (toml1, _c1) = simulate_set_field(&config, "az_cli_timeout", "300");
         // Parse c1 and apply next set
         let c1_reparsed: AzlinConfig = toml::from_str(&toml1).unwrap();
-        let (toml2, c2) = simulate_set_field(&c1_reparsed, "default_region", "eastus");
+        let (toml2, _c2) = simulate_set_field(&c1_reparsed, "default_region", "eastus");
         let c2_reparsed: AzlinConfig = toml::from_str(&toml2).unwrap();
         let (_, c3) = simulate_set_field(&c2_reparsed, "ssh_auto_sync_keys", "false");
 

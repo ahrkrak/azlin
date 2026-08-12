@@ -1607,7 +1607,7 @@ mod tests {
         let script = cloud_init_script("testuser");
         assert!(
             script.contains("loginctl enable-linger testuser"),
-            "cloud-init script must enable systemd user linger for snap Chromium cgroup support"
+            "cloud-init script must enable systemd user linger so user-scoped services work"
         );
     }
 

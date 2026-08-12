@@ -199,9 +199,9 @@ fn test_build_vscode_remote_uri_format() {
 #[test]
 fn test_build_log_follow_args_has_tail_f() {
     let args =
-        crate::connect_helpers::build_log_follow_args("user", "10.0.0.1", "/var/log/syslog", 10);
+        crate::connect_helpers::build_log_follow_args("user", "10.0.0.1", "/var/log/messages", 10);
     assert!(args.iter().any(|a| a.contains("tail -f")));
-    assert!(args.iter().any(|a| a.contains("/var/log/syslog")));
+    assert!(args.iter().any(|a| a.contains("/var/log/messages")));
 }
 
 #[test]
@@ -210,7 +210,7 @@ fn test_build_log_tail_args_custom_lines() {
         "user",
         "10.0.0.1",
         100,
-        "/var/log/auth.log",
+        "/var/log/secure",
         10,
     );
     assert!(args.iter().any(|a| a.contains("tail -n 100")));
@@ -245,22 +245,22 @@ fn test_log_type_to_path_all_variants() {
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("other"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }

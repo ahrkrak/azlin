@@ -142,12 +142,12 @@ fn test_build_log_follow_args() {
     let args = crate::connect_helpers::build_log_follow_args(
         "azureuser",
         "10.0.0.5",
-        "/var/log/syslog",
+        "/var/log/messages",
         10,
     );
     assert_eq!(args.len(), 6);
     assert_eq!(args[4], "azureuser@10.0.0.5");
-    assert_eq!(args[5], "sudo tail -f /var/log/syslog");
+    assert_eq!(args[5], "sudo tail -f /var/log/messages");
 }
 
 #[test]
@@ -156,12 +156,12 @@ fn test_build_log_tail_args() {
         "admin",
         "10.0.0.1",
         100,
-        "/var/log/auth.log",
+        "/var/log/secure",
         10,
     );
     assert_eq!(args.len(), 6);
     assert!(args[5].contains("tail -n 100"));
-    assert!(args[5].contains("/var/log/auth.log"));
+    assert!(args[5].contains("/var/log/secure"));
 }
 
 // ── update_helpers tests ────────────────────────────────────────
@@ -199,11 +199,11 @@ fn test_log_type_to_path_cloud_init() {
 fn test_log_type_to_path_syslog() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }
 
@@ -211,11 +211,11 @@ fn test_log_type_to_path_syslog() {
 fn test_log_type_to_path_auth() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
 }
 
@@ -223,7 +223,7 @@ fn test_log_type_to_path_auth() {
 fn test_log_type_to_path_unknown_defaults_syslog() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("something-else"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }
 

@@ -259,12 +259,12 @@ pub(crate) async fn handle_logs(
 ) -> Result<()> {
     let log_paths: Vec<&str> = match log_type {
         azlin_cli::LogType::CloudInit => vec!["/var/log/cloud-init-output.log"],
-        azlin_cli::LogType::Syslog => vec!["/var/log/syslog"],
-        azlin_cli::LogType::Auth => vec!["/var/log/auth.log"],
+        azlin_cli::LogType::Syslog => vec!["/var/log/messages"],
+        azlin_cli::LogType::Auth => vec!["/var/log/secure"],
         azlin_cli::LogType::Azlin => vec!["/var/log/azlin/azlin.log"],
         azlin_cli::LogType::All => vec![
-            "/var/log/syslog",
-            "/var/log/auth.log",
+            "/var/log/messages",
+            "/var/log/secure",
             "/var/log/cloud-init-output.log",
             "/var/log/azlin/azlin.log",
         ],

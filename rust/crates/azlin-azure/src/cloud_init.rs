@@ -161,21 +161,30 @@ pub fn render_dev_cloud_init_script_with_disks(
     // Pre-allocate ~10KB for the generated script to avoid repeated reallocations
     let mut script = String::with_capacity(10 * 1024);
     script.push_str("#!/bin/bash\nset -euo pipefail\n\n");
-    script.push_str("dnf5 makecache -y\n");
-    script.push_str("dnf5 upgrade -y\n\n");
-    script.push_str("dnf5 install -y \\\n");
+    // Repo refresh and OS upgrade are best-effort: a transient mirror problem must not
+    // abort provisioning outright. Missing packages are caught by the verification below.
+    script.push_str("dnf5 makecache -y || echo '[AZLIN] WARNING: dnf5 makecache failed' >&2\n");
+    script.push_str("dnf5 upgrade -y || echo '[AZLIN] WARNING: dnf5 upgrade failed' >&2\n\n");
 
-    for (idx, package) in packages.iter().enumerate() {
-        script.push_str("    ");
-        script.push_str(package);
-        if idx + 1 != packages.len() {
-            script.push_str(" \\\n");
-        } else {
-            script.push('\n');
-        }
-    }
+    let package_list = packages.join(" ");
+    // A single unavailable package must not cost us the other twenty, so fall back to
+    // installing one at a time and report each failure loudly.
+    script.push_str(&format!(
+        "if ! dnf5 install -y {package_list}; then\n    \
+             echo '[AZLIN] WARNING: batch package install failed; retrying individually' >&2\n    \
+             for pkg in {package_list}; do\n        \
+                 dnf5 install -y \"$pkg\" || echo \"[AZLIN] WARNING: package install failed: $pkg\" >&2\n    \
+             done\n\
+         fi\n\n"
+    ));
 
-    script.push('\n');
+    // ...but a VM without these is not a usable dev box, so fail loudly rather than
+    // handing back a half-provisioned machine.
+    script.push_str(
+        "for required in git tmux curl python3; do\n    \
+             command -v \"$required\" >/dev/null 2>&1 || { echo \"[AZLIN] FATAL: required tool missing after install: $required\" >&2; exit 1; }\n\
+         done\n\n",
+    );
 
     // Disk formatting and mounting (must happen before user setup so home dir is on the right disk)
     if disk_config.home_disk || disk_config.tmp_disk {
@@ -280,13 +289,16 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
         "echo 'NOTE: Chromium is not packaged for Azure Linux 4.0 and snapd is unavailable; skipping browser install. Install manually if needed for azlin gui.'".to_string(),
         // astral-uv (official installer; no dnf5 package, no snapd)
         format!("su - {u} -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || echo 'WARNING: uv installation failed'", u = username),
-        // Node.js 24 LTS (official prebuilt tarball; NodeSource does not support Azure Linux)
-        "ARCH=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/') && \
-            VER=$(curl -fsSL https://nodejs.org/dist/latest-v24.x/ | grep -oE \"node-v24\\.[0-9]+\\.[0-9]+-linux-${ARCH}\\.tar\\.xz\" | head -1) && \
-            curl -fsSL \"https://nodejs.org/dist/latest-v24.x/${VER}\" -o /tmp/node.tar.xz && \
-            mkdir -p /usr/local/lib/nodejs && tar -xJf /tmp/node.tar.xz -C /usr/local/lib/nodejs && rm /tmp/node.tar.xz && \
-            NODEDIR=$(find /usr/local/lib/nodejs -maxdepth 1 -name 'node-v24*' | head -1) && \
-            for b in node npm npx; do ln -sf \"$NODEDIR/bin/$b\" \"/usr/local/bin/$b\"; done || echo 'WARNING: Node.js installation failed'".to_string(),
+        // Node.js 24 LTS comes from the `nodejs24`/`nodejs24-npm` packages (see
+        // `default_dev_packages`). Those install versioned paths only -- `/usr/bin/node-24` and
+        // `/usr/lib/node_modules_24/npm` -- so link the usual names into /usr/local/bin, which
+        // precedes /usr/bin on PATH.
+        "ln -sf /usr/bin/node-24 /usr/local/bin/node && \
+            ln -sf /usr/lib/node_modules_24/npm/bin/npm-cli.js /usr/local/bin/npm && \
+            ln -sf /usr/lib/node_modules_24/npm/bin/npx-cli.js /usr/local/bin/npx && \
+            node --version && npm --version \
+            || echo '[AZLIN] WARNING: Node.js/npm setup failed' >&2"
+            .to_string(),
         // npm user-local configuration
         format!("mkdir -p /home/{u}/.npm-packages && echo 'prefix=${{HOME}}/.npm-packages' > /home/{u}/.npmrc && chown {u}:{u} /home/{u}/.npmrc /home/{u}/.npm-packages", u = username),
         // Tmux configuration
@@ -327,7 +339,7 @@ pub fn default_dev_setup_commands(username: &str) -> Vec<String> {
         // Enable systemd user linger so SSH sessions get a systemd user instance
         format!("loginctl enable-linger {u}", u = username),
         // bashrc additions (npm path, go path, cargo env, azlin alias)
-        format!("cat >> /home/{u}/.bashrc << 'BASHEOF'\n\n# npm user-local configuration\nNPM_PACKAGES=\"${{HOME}}/.npm-packages\"\nPATH=\"$NPM_PACKAGES/bin:$PATH\"\nMANPATH=\"$NPM_PACKAGES/share/man:$(manpath 2>/dev/null || echo $MANPATH)\"\n\n# Go\nexport PATH=$PATH:/usr/local/go/bin\n\n# Cargo\nsource $HOME/.cargo/env 2>/dev/null\nBASHEOF", u = username),
+        format!("cat >> /home/{u}/.bashrc << 'BASHEOF'\n\n# npm user-local configuration\nNPM_PACKAGES=\"${{HOME}}/.npm-packages\"\nPATH=\"$NPM_PACKAGES/bin:$PATH\"\nMANPATH=\"$NPM_PACKAGES/share/man:$(manpath 2>/dev/null || echo $MANPATH)\"\n\n# User-local binaries (uv, pipx)\nexport PATH=\"$HOME/.local/bin:$PATH\"\n\n# Go\nexport PATH=$PATH:/usr/local/go/bin\n\n# Cargo\nsource $HOME/.cargo/env 2>/dev/null\nBASHEOF", u = username),
         // Version verification (rustc is in user homedir, must check as user)
         format!("echo '[AZLIN] Provisioning complete' && which gh && gh --version && which az && az --version | head -2 && which node && node --version && su - {u} -c 'which rustc && rustc --version && which amplihack && amplihack --version && which azlin && azlin --version' && which dotnet && dotnet --version || true", u = username),
         // Explicit provisioning sentinel for azlin's post-create readiness checks.
@@ -353,6 +365,8 @@ pub fn default_dev_packages() -> &'static [&'static str] {
         "cmake",
         "ripgrep",
         "python3-pip",
+        "nodejs24",
+        "nodejs24-npm",
         "jq",
         "unzip",
         "xdg-utils",
@@ -454,8 +468,8 @@ mod tests {
             "Missing GitHub CLI install command"
         );
         assert!(
-            cmds.iter().any(|c| c.contains("nodejs.org")),
-            "Missing Node.js install command"
+            default_dev_packages().contains(&"nodejs24"),
+            "Missing Node.js package"
         );
         assert!(
             cmds.iter().any(|c| c.contains("claude.ai/install.sh")),

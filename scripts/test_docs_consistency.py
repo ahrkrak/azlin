@@ -67,7 +67,7 @@ def authoritative_default_os_label() -> str:
 def authoritative_node_major() -> str:
     """Return the installed Node.js major version, e.g. '24'."""
     text = _read(CLOUD_INIT_RS)
-    m = re.search(r"nodesource\.com/setup_(\d+)\.x", text)
+    m = re.search(r"/usr/bin/node-(\d+)", text)
     assert m, "Could not parse Node.js version from cloud_init.rs"
     return m.group(1)
 
@@ -91,7 +91,7 @@ def authoritative_dotnet_channel() -> str:
 def authoritative_python_minor() -> str:
     """Return the installed Python version on the VM, e.g. '3.14'."""
     text = _read(CLOUD_INIT_RS)
-    m = re.search(r"python(3\.\d+)\s+--version", text)
+    m = re.search(r"Python (3\.\d+) ships natively", text)
     assert m, "Could not parse Python version from cloud_init.rs"
     return m.group(1)
 

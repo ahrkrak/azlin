@@ -122,16 +122,16 @@ fn test_vscode_uri_ssh_remote_prefix() {
 #[test]
 fn test_build_log_follow_args_structure() {
     let args =
-        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/syslog", 10);
+        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/messages", 10);
     assert!(args.contains(&"admin@10.0.0.1".to_string()));
     assert!(args.iter().any(|a| a.contains("tail -f")));
-    assert!(args.iter().any(|a| a.contains("/var/log/syslog")));
+    assert!(args.iter().any(|a| a.contains("/var/log/messages")));
 }
 
 #[test]
 fn test_log_tail_args_includes_line_count() {
     let args =
-        crate::connect_helpers::build_log_tail_args("admin", "10.0.0.1", 50, "/var/log/syslog", 10);
+        crate::connect_helpers::build_log_tail_args("admin", "10.0.0.1", 50, "/var/log/messages", 10);
     assert!(args.iter().any(|a| a.contains("tail -n 50")));
 }
 
@@ -164,7 +164,7 @@ fn test_log_path_cloud_init_variant() {
 fn test_log_path_syslog_variant() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }
 
@@ -172,7 +172,7 @@ fn test_log_path_syslog_variant() {
 fn test_log_path_auth_variant() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
 }
 
@@ -184,11 +184,11 @@ fn test_log_path_capitalized_names() {
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
     assert_eq!(
         crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
+        "/var/log/secure"
     );
 }
 
@@ -196,7 +196,7 @@ fn test_log_path_capitalized_names() {
 fn test_log_path_unknown_fallback_syslog() {
     assert_eq!(
         crate::update_helpers::log_type_to_path("garbage"),
-        "/var/log/syslog"
+        "/var/log/messages"
     );
 }
 
