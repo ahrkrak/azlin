@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Resource leak in `destroy`/`delete`/`kill`/`killall`**: these commands deleted
+  the VM, its disks and its NIC but left the session's Public IP and Network
+  Security Group orphaned in Azure, where a Standard static public IP keeps
+  billing (~$3.65/month) indefinitely. All four commands now route through a
+  shared teardown that also removes the session's Public IP and NSG.
+  - Resources are selected by exact `azlin-session` tag equality, never by name
+    prefix, so a session cannot delete a similarly-named sibling's resources.
+  - Deletion is ordered VM → disks → NIC → Public IP → NSG; the NIC delete is
+    awaited so its dependents can be released.
+  - Public IPs and NSGs still associated outside the teardown, and untagged
+    resources of unproven ownership, are never deleted — they are reported as a
+    warning instead.
+  - Deletes tolerate 404s, so an interrupted teardown can simply be re-run.
+  - VNets, subnets and SSH public keys are never touched.
+- **`destroy --dry-run` no longer fabricates results**: it previously echoed back
+  whatever VM name it was given without contacting Azure, happily reporting a
+  deletion plan for a VM that no longer existed. It now validates the VM against
+  Azure, enumerates every resource that will actually be deleted, and reports
+  leftover tagged resources when the VM is already gone.
+- **`destroy --delete-rg` no longer silently does nothing**: the flag was parsed
+  but never read. It is now rejected with an explanatory error, since deleting a
+  resource group would destroy unmanaged resources sharing it.
+
 ### Added
 - **GUI Forwarding**: Run remote Linux GUI applications locally (#828)
   - `azlin connect --x11` / `-X` — X11 forwarding for lightweight GUI apps (gitk, meld, xeyes)
