@@ -291,7 +291,7 @@ sed -i 's/restore_timeout = 30/restore_timeout = 90/' ~/.azlin/config.toml
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo tdnf install gnome-terminal
+sudo apt install gnome-terminal
 
 # Fedora/RHEL
 sudo dnf install gnome-terminal
@@ -385,7 +385,7 @@ sudo usermod -aG sudo $USER
 echo 'terminal_launcher = "linux_gnome"' >> ~/.azlin/config.toml
 
 # Or install gnome-terminal
-sudo tdnf install gnome-terminal
+sudo dnf5 install gnome-terminal
 ```
 
 ---

@@ -54,6 +54,43 @@ pub fn format_sync_dry_run(sync_dir: &str, target_name: &str, rg: &str) -> Strin
     format!("Would sync {} to {} in '{}'", sync_dir, target_name, rg)
 }
 
+/// Build the remote command that retrieves a given log stream.
+///
+/// Azure Linux 4.0 ships no rsyslog by default, so `/var/log/messages` and
+/// `/var/log/secure` do not exist -- system and auth logs live in the journal.
+/// File-backed logs (cloud-init, azlin) are still read with `tail`.
+pub fn build_log_command(log_type: &azlin_cli::LogType, lines: u32, follow: bool) -> String {
+    // journalctl facility 4 = auth, 10 = authpriv; repeated fields are OR-ed.
+    const AUTH_FILTER: &str = "SYSLOG_FACILITY=4 SYSLOG_FACILITY=10";
+    const CLOUD_INIT: &str = "/var/log/cloud-init-output.log";
+    const AZLIN_LOG: &str = "/var/log/azlin/azlin.log";
+
+    match (log_type, follow) {
+        (azlin_cli::LogType::CloudInit, false) => {
+            format!("sudo tail -n {lines} {CLOUD_INIT}")
+        }
+        (azlin_cli::LogType::CloudInit, true) => format!("sudo tail -f {CLOUD_INIT}"),
+        (azlin_cli::LogType::Azlin, false) => format!("sudo tail -n {lines} {AZLIN_LOG}"),
+        (azlin_cli::LogType::Azlin, true) => format!("sudo tail -f {AZLIN_LOG}"),
+        (azlin_cli::LogType::Syslog, false) => {
+            format!("sudo journalctl --no-pager -n {lines}")
+        }
+        (azlin_cli::LogType::Syslog, true) => "sudo journalctl -f".to_string(),
+        (azlin_cli::LogType::Auth, false) => {
+            format!("sudo journalctl --no-pager -n {lines} {AUTH_FILTER}")
+        }
+        (azlin_cli::LogType::Auth, true) => {
+            format!("sudo journalctl -f {AUTH_FILTER}")
+        }
+        (azlin_cli::LogType::All, false) => format!(
+            "sudo journalctl --no-pager -n {lines}; sudo tail -n {lines} {CLOUD_INIT} {AZLIN_LOG} 2>/dev/null || true"
+        ),
+        (azlin_cli::LogType::All, true) => format!(
+            "sudo sh -c 'tail -f {CLOUD_INIT} {AZLIN_LOG} 2>/dev/null & journalctl -f'"
+        ),
+    }
+}
+
 /// Build the `tail` command string used to fetch remote logs.
 pub fn build_tail_command(lines: u32, log_path: &str) -> String {
     format!("sudo tail -n {} {}", lines, log_path)

@@ -28,7 +28,7 @@ azlin batch exec "*" "docker ps"
 azlin batch exec "*" "df -h"
 
 # Update all VMs
-azlin batch exec "*" "sudo tdnf update -y"
+azlin batch exec "*" "sudo dnf5 upgrade -y"
 ```
 
 ### Pattern Matching

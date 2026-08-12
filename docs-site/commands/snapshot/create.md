@@ -116,7 +116,7 @@ azlin snapshot create my-vm
 
 # Perform updates
 azlin connect my-vm
-sudo tdnf update -y
+sudo dnf5 upgrade -y
 exit
 
 # Test everything works

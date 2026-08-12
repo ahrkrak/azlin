@@ -197,11 +197,11 @@ fn test_build_vscode_remote_uri_format() {
 }
 
 #[test]
-fn test_build_log_follow_args_has_tail_f() {
+fn test_build_remote_command_args_has_tail_f() {
     let args =
-        crate::connect_helpers::build_log_follow_args("user", "10.0.0.1", "/var/log/syslog", 10);
+        crate::connect_helpers::build_remote_command_args("user", "10.0.0.1", "sudo tail -f /var/log/messages", 10);
     assert!(args.iter().any(|a| a.contains("tail -f")));
-    assert!(args.iter().any(|a| a.contains("/var/log/syslog")));
+    assert!(args.iter().any(|a| a.contains("/var/log/messages")));
 }
 
 #[test]
@@ -210,7 +210,7 @@ fn test_build_log_tail_args_custom_lines() {
         "user",
         "10.0.0.1",
         100,
-        "/var/log/auth.log",
+        "/var/log/secure",
         10,
     );
     assert!(args.iter().any(|a| a.contains("tail -n 100")));
@@ -221,7 +221,7 @@ fn test_build_log_tail_args_custom_lines() {
 #[test]
 fn test_build_dev_update_script_all_sections() {
     let script = crate::update_helpers::build_dev_update_script();
-    assert!(script.contains("tdnf update"));
+    assert!(script.contains("dnf5 upgrade"));
     assert!(script.contains("rustup"));
     assert!(script.contains("pip3"));
     assert!(script.contains("npm"));
@@ -230,37 +230,6 @@ fn test_build_dev_update_script_all_sections() {
 #[test]
 fn test_build_os_update_cmd_format() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("tdnf update"));
+    assert!(cmd.contains("dnf5 upgrade"));
 }
 
-#[test]
-fn test_log_type_to_path_all_variants() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("cloud-init"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("other"),
-        "/var/log/syslog"
-    );
-}

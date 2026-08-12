@@ -138,16 +138,16 @@ fn test_build_vscode_remote_uri() {
 }
 
 #[test]
-fn test_build_log_follow_args() {
-    let args = crate::connect_helpers::build_log_follow_args(
+fn test_build_remote_command_args() {
+    let args = crate::connect_helpers::build_remote_command_args(
         "azureuser",
         "10.0.0.5",
-        "/var/log/syslog",
+        "sudo tail -f /var/log/messages",
         10,
     );
     assert_eq!(args.len(), 6);
     assert_eq!(args[4], "azureuser@10.0.0.5");
-    assert_eq!(args[5], "sudo tail -f /var/log/syslog");
+    assert_eq!(args[5], "sudo tail -f /var/log/messages");
 }
 
 #[test]
@@ -156,12 +156,12 @@ fn test_build_log_tail_args() {
         "admin",
         "10.0.0.1",
         100,
-        "/var/log/auth.log",
+        "/var/log/secure",
         10,
     );
     assert_eq!(args.len(), 6);
     assert!(args[5].contains("tail -n 100"));
-    assert!(args[5].contains("/var/log/auth.log"));
+    assert!(args[5].contains("/var/log/secure"));
 }
 
 // ── update_helpers tests ────────────────────────────────────────
@@ -171,7 +171,7 @@ fn test_build_dev_update_script_contains_sections() {
     let script = crate::update_helpers::build_dev_update_script();
     assert!(script.starts_with("#!/bin/bash"));
     assert!(script.contains("set -e"));
-    assert!(script.contains("tdnf update"));
+    assert!(script.contains("dnf5 upgrade"));
     assert!(script.contains("rustup update"));
     assert!(script.contains("pip3 install"));
     assert!(script.contains("npm install"));
@@ -180,51 +180,7 @@ fn test_build_dev_update_script_contains_sections() {
 #[test]
 fn test_build_os_update_cmd() {
     let cmd = crate::update_helpers::build_os_update_cmd();
-    assert!(cmd.contains("tdnf update"));
-}
-
-#[test]
-fn test_log_type_to_path_cloud_init() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("cloud-init"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_syslog() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_auth() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
-    );
-}
-
-#[test]
-fn test_log_type_to_path_unknown_defaults_syslog() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("something-else"),
-        "/var/log/syslog"
-    );
+    assert!(cmd.contains("dnf5 upgrade"));
 }
 
 // ── compose_helpers tests ───────────────────────────────────────

@@ -1,36 +1,4 @@
 #[test]
-fn test_update_log_type_to_path() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("cloud-init"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("auth"),
-        "/var/log/auth.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("unknown"),
-        "/var/log/syslog"
-    );
-}
-
-#[test]
 fn test_compose_resolve_file_none() {
     assert_eq!(
         crate::compose_helpers::resolve_compose_file(None),
@@ -79,11 +47,11 @@ fn test_autopilot_build_cost_scope() {
 }
 
 #[test]
-fn test_connect_build_log_follow_args() {
+fn test_connect_build_remote_command_args() {
     let args =
-        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.1", "/var/log/syslog", 10);
+        crate::connect_helpers::build_remote_command_args("admin", "10.0.0.1", "sudo tail -f /var/log/messages", 10);
     assert!(args.contains(&format!("admin@10.0.0.1")));
-    assert!(args.contains(&"sudo tail -f /var/log/syslog".to_string()));
+    assert!(args.contains(&"sudo tail -f /var/log/messages".to_string()));
     assert!(args.contains(&"ConnectTimeout=10".to_string()));
 }
 

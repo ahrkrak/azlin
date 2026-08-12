@@ -235,9 +235,9 @@ mod tests {
 
     #[test]
     fn test_os_update_failure_message_with_stderr() {
-        let msg = os_update_failure_message("vm1", "  tdnf failed  ");
+        let msg = os_update_failure_message("vm1", "  dnf5 failed  ");
         assert!(msg.starts_with("OS update failed on 'vm1': "));
-        assert!(msg.contains("tdnf failed"));
+        assert!(msg.contains("dnf5 failed"));
     }
 
     #[test]

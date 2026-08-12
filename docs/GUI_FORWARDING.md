@@ -180,7 +180,7 @@ Install `autocutsel` on the VM for bidirectional clipboard support:
 
 ```bash
 # On the VM
-sudo tdnf install -y autocutsel
+sudo dnf5 install -y autocutsel
 autocutsel -fork
 ```
 
@@ -269,7 +269,7 @@ The `xauth` package may be missing on the VM:
 
 ```bash
 # On the VM
-sudo tdnf install -y xauth
+sudo dnf5 install -y xauth
 # Disconnect and reconnect with --x11
 ```
 

@@ -341,7 +341,7 @@ azlin new --no-nfs
 
 Every VM runs a comprehensive cloud-init script that:
 
-1. Updates system packages (`tdnf update`)
+1. Updates system packages (`dnf5 upgrade`)
 2. Installs Docker and docker-compose
 3. Configures non-root Docker access
 4. Installs Azure CLI, GitHub CLI, Git
@@ -388,8 +388,8 @@ azlin new --region westus2
 ssh azureuser@<vm-ip>
 sudo tail -f /var/log/cloud-init-output.log
 
-# Check for tdnf activity
-ps -ef | grep tdnf
+# Check for dnf5 activity
+ps -ef | grep dnf5
 ```
 
 ### SSH Connection Fails

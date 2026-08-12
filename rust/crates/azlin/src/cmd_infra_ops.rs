@@ -58,7 +58,7 @@ pub(crate) async fn handle_runner_enable(
                 "--name",
                 &vm_name,
                 "--image",
-                "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest",
+                "microsoftazurelinux:azurelinux-4:4:latest",
                 "--size",
                 &size,
                 "--admin-username",

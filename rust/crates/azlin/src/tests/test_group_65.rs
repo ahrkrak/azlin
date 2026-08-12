@@ -121,7 +121,7 @@ async fn test_inproc_restore_dispatch() {
 #[tokio::test]
 #[ignore]
 async fn test_inproc_os_update() {
-    // os-update actually runs tdnf on the remote VM — use devo which is safe
+    // os-update actually runs dnf5 on the remote VM — use devo which is safe
     let _r = run_dispatch(&["os-update", VM, "--resource-group", RG]).await;
 }
 

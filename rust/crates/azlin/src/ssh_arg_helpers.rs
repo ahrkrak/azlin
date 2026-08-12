@@ -361,10 +361,10 @@ mod tests {
 
     #[test]
     fn inject_key_into_log_follow_args() {
-        let mut args = super::super::connect_helpers::build_log_follow_args(
+        let mut args = super::super::connect_helpers::build_remote_command_args(
             "azureuser",
             "10.0.0.1",
-            "/var/log/syslog",
+            "sudo tail -f /var/log/syslog",
             10,
         );
         let key = std::path::Path::new("/home/u/.ssh/azlin_key");

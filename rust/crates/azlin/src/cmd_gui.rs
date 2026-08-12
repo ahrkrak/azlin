@@ -193,8 +193,9 @@ fn check_local_deps() -> Result<()> {
     if !has_vncviewer {
         anyhow::bail!(
             "vncviewer not found. Install it with:\n  \
-             sudo apt-get install -y tigervnc-viewer tigervnc-common\n  \
-             Or on macOS: brew install --cask tigervnc-viewer"
+             Debian/Ubuntu: sudo apt-get install -y tigervnc-viewer tigervnc-common\n  \
+             Fedora/RHEL:   sudo dnf install -y tigervnc\n  \
+             macOS:         brew install --cask tigervnc-viewer"
         );
     }
 
@@ -245,24 +246,30 @@ fn build_dependency_setup_script(mode: &VncMode) -> String {
     let (check_cmd, install_packages) = match mode {
         VncMode::Desktop => (
             "command -v vncserver >/dev/null 2>&1 && command -v startxfce4 >/dev/null 2>&1",
-            "tigervnc-standalone-server xfce4 xfce4-goodies dbus-x11",
+            "tigervnc-server xfce4-session xfwm4 xfce4-panel xfdesktop dbus-x11",
         ),
         VncMode::Minimal => (
             "command -v vncserver >/dev/null 2>&1 && command -v openbox >/dev/null 2>&1",
-            "tigervnc-standalone-server openbox",
+            "tigervnc-server openbox dbus-x11",
         ),
         VncMode::App(_) => (
             "command -v vncserver >/dev/null 2>&1",
-            "tigervnc-standalone-server",
+            "tigervnc-server dbus-x11",
         ),
     };
 
+    // Azure Linux 4.0 does not ship a VNC server or any desktop environment in its
+    // default (base/microsoft) repositories, so the install attempt is best-effort and
+    // failure is reported with actionable guidance rather than a bare package-manager error.
     let script = format!(
         "if {check_cmd}; then exit 0; fi; \
-         sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq || exit $?; \
-         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y {install_packages} || exit $?; \
+         sudo dnf5 makecache -y >/dev/null 2>&1 || true; \
+         sudo dnf5 install -y {install_packages} || true; \
          if ! ({check_cmd}); then \
-           echo 'Remote GUI dependencies are still missing after installation.' >&2; \
+           echo 'azlin: remote GUI dependencies are missing and could not be installed automatically.' >&2; \
+           echo 'azlin: required packages: {install_packages}' >&2; \
+           echo 'azlin: Azure Linux 4.0 does not provide a VNC server or desktop environment in its default repositories.' >&2; \
+           echo 'azlin: install them from an additional repository on the VM, then re-run this command.' >&2; \
            exit 1; \
          fi"
     );
@@ -733,7 +740,7 @@ mod tests {
     #[test]
     fn test_build_dependency_setup_script_is_noninteractive() {
         let script = build_dependency_setup_script(&VncMode::Desktop);
-        assert!(script.contains("DEBIAN_FRONTEND=noninteractive"));
+        assert!(script.contains("dnf5 install -y"));
         assert!(!script.contains("read "));
         assert!(!script.contains("[Y/n]"));
         assert!(script.contains("startxfce4"));
@@ -743,12 +750,14 @@ mod tests {
     }
 
     #[test]
-    fn test_build_dependency_setup_script_propagates_apt_failures() {
+    fn test_build_dependency_setup_script_reports_unavailable_packages() {
         let script = build_dependency_setup_script(&VncMode::Desktop);
-        assert!(script.contains("apt-get update -qq || exit $?"));
+        assert!(script.contains("dnf5 makecache -y"));
         assert!(script.contains(
-            "apt-get install -y tigervnc-standalone-server xfce4 xfce4-goodies dbus-x11 || exit $?"
+            "dnf5 install -y tigervnc-server xfce4-session xfwm4 xfce4-panel xfdesktop dbus-x11"
         ));
+        assert!(!script.contains("apt-get"));
+        assert!(script.contains("could not be installed automatically"));
     }
 
     #[test]

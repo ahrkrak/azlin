@@ -260,7 +260,7 @@ pub enum Commands {
         #[arg(long)]
         tmp_disk_size: Option<u32>,
 
-        /// OS image (e.g., azurelinux4, azure-linux-4, or full URN like MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest; default: Azure Linux 4.0)
+        /// OS image (e.g., azurelinux4, azure-linux-4, or full URN like microsoftazurelinux:azurelinux-4:4:latest; default: Azure Linux 4.0)
         #[arg(long)]
         os: Option<String>,
     },
@@ -2905,7 +2905,7 @@ mod tests {
 
     #[test]
     fn test_fleet_run() {
-        let cli = Cli::parse_from(["azlin", "fleet", "run", "tdnf update", "--all", "--dry-run"]);
+        let cli = Cli::parse_from(["azlin", "fleet", "run", "dnf5 upgrade", "--all", "--dry-run"]);
         if let Commands::Fleet {
             action:
                 FleetAction::Run {
@@ -2916,7 +2916,7 @@ mod tests {
                 },
         } = cli.command
         {
-            assert_eq!(command, "tdnf update");
+            assert_eq!(command, "dnf5 upgrade");
             assert!(all);
             assert!(dry_run);
         } else {

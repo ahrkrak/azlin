@@ -235,7 +235,7 @@ Install `autocutsel` on the VM for bidirectional clipboard support:
 
 ```bash
 # On the VM
-sudo tdnf install -y autocutsel
+sudo dnf5 install -y autocutsel
 autocutsel -fork
 ```
 

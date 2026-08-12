@@ -55,15 +55,15 @@ fn test_format_percentage_negative_clamps_to_zero() {
 // ── connect_helpers edge cases ─────────────────────────────────
 
 #[test]
-fn test_build_log_follow_args_format() {
+fn test_build_remote_command_args_format() {
     let args =
-        crate::connect_helpers::build_log_follow_args("admin", "10.0.0.5", "/var/log/syslog", 10);
+        crate::connect_helpers::build_remote_command_args("admin", "10.0.0.5", "sudo tail -f /var/log/messages", 10);
     assert_eq!(args.len(), 6);
     assert_eq!(args[0], "-o");
     assert_eq!(args[1], "StrictHostKeyChecking=accept-new");
     assert_eq!(args[4], "admin@10.0.0.5");
     assert!(args[5].contains("tail -f"));
-    assert!(args[5].contains("/var/log/syslog"));
+    assert!(args[5].contains("/var/log/messages"));
 }
 
 #[test]
@@ -72,30 +72,12 @@ fn test_build_log_tail_args_line_count() {
         "user",
         "192.168.1.1",
         200,
-        "/var/log/auth.log",
+        "/var/log/secure",
         10,
     );
     assert_eq!(args.len(), 6);
     assert!(args[5].contains("tail -n 200"));
-    assert!(args[5].contains("/var/log/auth.log"));
-}
-
-// ── update_helpers::log_type_to_path default branch ────────────
-
-#[test]
-fn test_log_type_to_path_capital_variants() {
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("CloudInit"),
-        "/var/log/cloud-init-output.log"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Syslog"),
-        "/var/log/syslog"
-    );
-    assert_eq!(
-        crate::update_helpers::log_type_to_path("Auth"),
-        "/var/log/auth.log"
-    );
+    assert!(args[5].contains("/var/log/secure"));
 }
 
 // ── autopilot_helpers::build_autopilot_config no budget ────────

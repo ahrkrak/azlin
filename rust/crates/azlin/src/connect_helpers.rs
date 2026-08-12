@@ -20,11 +20,11 @@ pub fn build_vscode_remote_uri(user: &str, ip: &str) -> String {
     format!("ssh-remote+{}@{}", user, ip)
 }
 
-/// Build SSH args for streaming logs via `tail -f`.
-pub fn build_log_follow_args(
+/// Build SSH args that run an arbitrary remote command (already fully formed).
+pub fn build_remote_command_args(
     username: &str,
     ip: &str,
-    log_path: &str,
+    remote_command: &str,
     connect_timeout: u64,
 ) -> Vec<String> {
     vec![
@@ -33,7 +33,7 @@ pub fn build_log_follow_args(
         "-o".to_string(),
         format!("ConnectTimeout={}", connect_timeout),
         format!("{}@{}", username, ip),
-        format!("sudo tail -f {}", log_path),
+        remote_command.to_string(),
     ]
 }
 

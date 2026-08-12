@@ -48,7 +48,7 @@ Azure image URNs in the format `Publisher:Offer:SKU:Version`:
 azlin new --os "MicrosoftCBLMariner:azure-linux-4:azure-linux-4-gen2:latest"
 ```
 
-Only images from the `MicrosoftCBLMariner` publisher are accepted. Non-MicrosoftCBLMariner URNs are rejected because azlin's provisioning defaults target Azure Linux 4.0 and `tdnf`.
+Only images from the `MicrosoftCBLMariner` publisher are accepted. Non-MicrosoftCBLMariner URNs are rejected because azlin's provisioning defaults target Azure Linux 4.0 and `dnf5`.
 
 ## Configuration
 
@@ -171,7 +171,7 @@ You used a shorthand that isn't recognized. Check the [shorthands table](#shorth
 
 ### "Only MicrosoftCBLMariner Azure Linux 4.0 images are supported"
 
-azlin requires Azure Linux 4.0 because its provisioning defaults use `tdnf`. Use a MicrosoftCBLMariner image URN or a recognized shorthand.
+azlin requires Azure Linux 4.0 because its provisioning defaults use `dnf5`. Use a MicrosoftCBLMariner image URN or a recognized shorthand.
 
 ### Config default not taking effect
 
