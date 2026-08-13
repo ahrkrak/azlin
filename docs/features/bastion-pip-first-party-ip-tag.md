@@ -67,16 +67,71 @@ Set `bastion_pip_ip_tags` in `~/.azlin/config.toml`:
 bastion_pip_ip_tags = "FirstPartyUsage=/ATEVETNonProd"
 ```
 
-The key is a free-form string passed through verbatim as the value of
-`--ip-tags`, so any valid Azure IP tag works, not just `FirstPartyUsage`:
+or via the CLI:
+
+```bash
+azlin config set bastion_pip_ip_tags "FirstPartyUsage=/ATEVETNonProd"
+```
+
+or per-invocation with the environment variable:
+
+```bash
+AZLIN_BASTION_PIP_IP_TAGS="FirstPartyUsage=/ATEVETNonProd" azlin new --name my-vm
+```
+
+The value is a free-form `Key=Value` IP tag passed through verbatim as the value
+of `--ip-tags`, so any valid Azure IP tag works, not just `FirstPartyUsage`:
 
 ```toml
 bastion_pip_ip_tags = "RoutingPreference=Internet"
 ```
 
-Leave the key out (or set it to an empty string) to disable the tag. Only enable
-it if `az feature show --namespace Microsoft.Network --name
-AllowBringYourOwnPublicIpAddress` reports `Registered` for your subscription.
+### Resolution order
+
+1. `AZLIN_BASTION_PIP_IP_TAGS` environment variable, when set to a valid tag.
+   Setting it to the **empty string explicitly disables** the tag, overriding the
+   config file.
+2. The persisted `bastion_pip_ip_tags` config field, when non-empty.
+3. The default: empty — **no `--ip-tags` argument at all**.
+
+An environment value that fails validation is ignored with a warning and
+resolution falls through to the config field, then the default.
+
+### Validation
+
+When a non-empty value is supplied it must be a well-formed `Key=Value` IP tag:
+the key must be non-empty, must not begin with `-` (an `az` CLI flag-injection
+guard), the whole value must be at most 512 characters, and must contain no
+control characters. An empty or whitespace-only value is valid and means
+"disabled".
+
+Only enable the tag if
+`az feature show --namespace Microsoft.Network --name AllowBringYourOwnPublicIpAddress`
+reports `Registered` for your subscription.
+
+## Relationship to upstream `rysweet/azlin`
+
+Upstream made this value configurable in PR #1039 (`865753a7`, merged
+2026-07-13), and this implementation deliberately mirrors its naming — the
+`bastion_pip_ip_tags` config field, the `AZLIN_BASTION_PIP_IP_TAGS` environment
+variable, the `AzlinConfig::bastion_pip_ip_tags()` resolver, the
+`validate_bastion_pip_ip_tags()` validator, and the
+`build_create_pip_args(rg, region, ip_tags)` signature — so the change stays a
+clean upstream contribution and minimises future merge conflicts.
+
+It diverges from upstream on two points, deliberately:
+
+| Behaviour | Upstream | Here |
+| --------- | -------- | ---- |
+| Default value | `FirstPartyUsage=/ATEVETNonProd` | empty (no tag) |
+| Empty value | rejected as invalid; resolver falls back to the default and `--ip-tags` is **always** emitted | valid; means "disabled", and `--ip-tags` is omitted entirely |
+
+Upstream's resolver is documented as always returning a non-empty, valid tag, so
+upstream still cannot turn the tag off. That means upstream still fails 100% of
+the time on any subscription that is not registered for
+`Microsoft.Network/AllowBringYourOwnPublicIpAddress` — it made the value
+configurable without making the feature usable outside Microsoft-internal
+tenants. Defaulting to "no tag" is the only setting that works everywhere.
 
 ## Usage
 
@@ -139,7 +194,7 @@ With the default configuration the query returns `[]`.
 
 - **Default**: No IP tag. No `--ip-tags` argument is passed to the Azure CLI.
 - **Applies to**: All bastion public IPs created by azlin once
-  `bastion_pip_ip_tags` is set.
+  `bastion_pip_ip_tags` (or `AZLIN_BASTION_PIP_IP_TAGS`) is set.
 - **Idempotent**: The tag value comes from config; repeated bastion provisioning
   with unchanged config always produces the same tag.
 - **Non-destructive**: The tag is additive. All other public IP settings (SKU,
@@ -149,9 +204,10 @@ With the default configuration the query returns `[]`.
 
 ## Configuration Reference
 
-| Setting                | Type              | Default | Meaning                              |
-| ---------------------- | ----------------- | ------- | ------------------------------------ |
-| `bastion_pip_ip_tags`  | `string` (optional) | unset (no tag) | Value passed to `--ip-tags` |
+| Setting                      | Type     | Default        | Meaning                              |
+| ---------------------------- | -------- | -------------- | ------------------------------------ |
+| `bastion_pip_ip_tags`        | `string` | `""` (no tag)  | Value passed to `--ip-tags`          |
+| `AZLIN_BASTION_PIP_IP_TAGS`  | env var  | unset          | Overrides the config field; empty disables |
 
 The value is a non-sensitive compliance/billing identifier and is safe to appear
 in command output and logs. It is passed as a discrete `argv` element (not a
