@@ -132,6 +132,16 @@ pub struct AzlinConfig {
     pub az_cli_timeout: u64,
     /// How `azlin list -r` opens restored sessions: "auto", "tab", or "window".
     pub restore_mode: RestoreMode,
+    /// Optional Azure IP tag applied to bastion public IPs, in the Azure CLI
+    /// `--ip-tags` form (e.g. "FirstPartyUsage=/ATEVETNonProd").
+    ///
+    /// Defaults to None, meaning no `--ip-tags` argument is passed at all.
+    /// First-party IP tags such as `FirstPartyUsage` require the subscription to
+    /// be registered for `Microsoft.Network/AllowBringYourOwnPublicIpAddress`,
+    /// which is not the case for ordinary subscriptions — passing one there makes
+    /// public IP creation fail outright. Set this only on subscriptions that have
+    /// the feature registered.
+    pub bastion_pip_ip_tags: Option<String>,
 }
 
 impl Default for AzlinConfig {
@@ -160,6 +170,7 @@ impl Default for AzlinConfig {
             scp_transfer_timeout: 120,
             az_cli_timeout: 120,
             restore_mode: RestoreMode::Auto,
+            bastion_pip_ip_tags: None,
         }
     }
 }
@@ -772,6 +783,35 @@ mod tests {
         assert_eq!(loaded.ssh_sync_method, SshSyncMethod::Rsync);
         assert!(!loaded.resource_group_auto_detect);
         assert_eq!(loaded.bastion_detection_timeout, 120);
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_defaults_to_none() {
+        assert_eq!(AzlinConfig::default().bastion_pip_ip_tags, None);
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_roundtrip() {
+        let toml_str = r#"
+            bastion_pip_ip_tags = "FirstPartyUsage=/ATEVETNonProd"
+        "#;
+        let config: AzlinConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(
+            config.bastion_pip_ip_tags,
+            Some("FirstPartyUsage=/ATEVETNonProd".to_string())
+        );
+
+        let serialized = toml::to_string_pretty(&config).unwrap();
+        let reloaded: AzlinConfig = toml::from_str(&serialized).unwrap();
+        assert_eq!(reloaded.bastion_pip_ip_tags, config.bastion_pip_ip_tags);
+    }
+
+    #[test]
+    fn test_validate_field_accepts_bastion_pip_ip_tags_string() {
+        let val =
+            AzlinConfig::validate_field("bastion_pip_ip_tags", "FirstPartyUsage=/ATEVETNonProd")
+                .unwrap();
+        assert_eq!(val, serde_json::json!("FirstPartyUsage=/ATEVETNonProd"));
     }
 
     #[test]

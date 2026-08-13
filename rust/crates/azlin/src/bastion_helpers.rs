@@ -55,18 +55,35 @@ pub fn build_create_bastion_subnet_args(resource_group: &str, region: &str) -> V
 }
 
 /// Build `az network public-ip create` arguments for the bastion public IP.
-pub fn build_create_pip_args(resource_group: &str, region: &str) -> Vec<String> {
+///
+/// `ip_tags` is the optional value for the Azure CLI `--ip-tags` argument
+/// (e.g. `Some("FirstPartyUsage=/ATEVETNonProd")`), sourced from the
+/// `bastion_pip_ip_tags` config key. When `None` — the default — no
+/// `--ip-tags` argument is emitted, because first-party IP tags require the
+/// subscription to be registered for
+/// `Microsoft.Network/AllowBringYourOwnPublicIpAddress` and otherwise cause
+/// public IP creation to fail with `SubscriptionNotRegisteredForFeature`.
+pub fn build_create_pip_args(
+    resource_group: &str,
+    region: &str,
+    ip_tags: Option<&str>,
+) -> Vec<String> {
     let pip = bastion_pip_name(region);
-    vec![
+    let mut args: Vec<String> = vec![
         "network".into(), "public-ip".into(), "create".into(),
         "--resource-group".into(), resource_group.into(),
         "--name".into(), pip,
         "--location".into(), region.to_lowercase(),
         "--sku".into(), "Standard".into(),
         "--allocation-method".into(), "Static".into(),
-        "--ip-tags".into(), "FirstPartyUsage=/ATEVETNonProd".into(),
-        "--output".into(), "none".into(),
-    ]
+    ];
+    if let Some(tags) = ip_tags.map(str::trim).filter(|t| !t.is_empty()) {
+        args.push("--ip-tags".into());
+        args.push(tags.into());
+    }
+    args.push("--output".into());
+    args.push("none".into());
+    args
 }
 
 /// Build `az network bastion create` arguments for the bastion host.
@@ -189,8 +206,12 @@ pub fn ensure_bastion_infrastructure(
     // 3. Create public IP (idempotent — `az network public-ip create` is a
     //    create-or-update operation)
     eprintln!("Ensuring public IP '{pip}'...");
+    // Optional IP tag; unset by default (see `bastion_pip_ip_tags` in config).
+    let ip_tags = azlin_core::AzlinConfig::load()
+        .ok()
+        .and_then(|c| c.bastion_pip_ip_tags);
     run_az_or_bail(
-        &build_create_pip_args(resource_group, region),
+        &build_create_pip_args(resource_group, region, ip_tags.as_deref()),
         &format!("Failed to create bastion public IP in {region}"),
     )?;
     eprintln!("  ✓ Public IP ready");
@@ -333,18 +354,44 @@ mod tests {
 
     #[test]
     fn test_build_create_pip_args_uses_standard_sku() {
-        let args = build_create_pip_args("my-rg", "westus");
+        let args = build_create_pip_args("my-rg", "westus", None);
         assert!(args.contains(&"azlin-bastion-westus-pip".to_string()));
         assert!(args.contains(&"Standard".to_string()));
         assert!(args.contains(&"Static".to_string()));
     }
 
     #[test]
-    fn test_build_create_pip_args_applies_first_party_ip_tag() {
-        let args = build_create_pip_args("my-rg", "westus");
-        // Every bastion public IP must carry the FirstPartyUsage IP tag.
+    fn test_build_create_pip_args_omits_ip_tags_by_default() {
+        let args = build_create_pip_args("my-rg", "westus", None);
+        // First-party IP tags require the subscription to be registered for
+        // Microsoft.Network/AllowBringYourOwnPublicIpAddress; emitting one by
+        // default breaks every ordinary subscription. Default must be no flag.
+        assert!(!args.contains(&"--ip-tags".to_string()));
+        assert!(!args.iter().any(|a| a.contains("FirstPartyUsage")));
+    }
+
+    #[test]
+    fn test_build_create_pip_args_applies_configured_ip_tag() {
+        let args =
+            build_create_pip_args("my-rg", "westus", Some("FirstPartyUsage=/ATEVETNonProd"));
         let tag_idx = args.iter().position(|a| a == "--ip-tags").unwrap();
         assert_eq!(args[tag_idx + 1], "FirstPartyUsage=/ATEVETNonProd");
+        // The flag must precede the trailing --output none pair.
+        assert_eq!(args[args.len() - 2], "--output");
+        assert_eq!(args[args.len() - 1], "none");
+    }
+
+    #[test]
+    fn test_build_create_pip_args_accepts_arbitrary_ip_tag_value() {
+        let args = build_create_pip_args("my-rg", "westus", Some("RoutingPreference=Internet"));
+        let tag_idx = args.iter().position(|a| a == "--ip-tags").unwrap();
+        assert_eq!(args[tag_idx + 1], "RoutingPreference=Internet");
+    }
+
+    #[test]
+    fn test_build_create_pip_args_ignores_blank_ip_tag() {
+        let args = build_create_pip_args("my-rg", "westus", Some("   "));
+        assert!(!args.contains(&"--ip-tags".to_string()));
     }
 
     #[test]
