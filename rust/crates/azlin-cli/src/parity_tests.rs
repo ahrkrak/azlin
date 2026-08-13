@@ -1095,6 +1095,186 @@ mod parity_tests {
     }
 
     // =====================================================================
+    // 12b. GUI INSTALL — `azlin gui install` must coexist with the positional
+    //      VM identifier that `azlin gui <vm>` already accepts.
+    // =====================================================================
+
+    #[test]
+    fn test_gui_bare_has_no_action_and_no_vm() {
+        let cli = Cli::parse_from(["azlin", "gui"]);
+        if let Commands::Gui {
+            action,
+            vm_identifier,
+            ..
+        } = cli.command
+        {
+            assert!(action.is_none(), "bare `azlin gui` has no subcommand");
+            assert!(vm_identifier.is_none(), "bare `azlin gui` names no VM");
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_with_vm_still_connects() {
+        let cli = Cli::parse_from(["azlin", "gui", "myvm"]);
+        if let Commands::Gui {
+            action,
+            vm_identifier,
+            ..
+        } = cli.command
+        {
+            assert!(action.is_none(), "`azlin gui myvm` is a connect, not a subcommand");
+            assert_eq!(vm_identifier.as_deref(), Some("myvm"));
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_existing_connect_flags_are_unchanged() {
+        let cli = Cli::parse_from([
+            "azlin",
+            "gui",
+            "myvm",
+            "--resolution",
+            "1280x720",
+            "--depth",
+            "16",
+            "--minimal",
+            "--user",
+            "devuser",
+            "--resource-group",
+            "rg1",
+            "--yes",
+        ]);
+        if let Commands::Gui {
+            action,
+            vm_identifier,
+            resolution,
+            depth,
+            minimal,
+            user,
+            resource_group,
+            yes,
+            ..
+        } = cli.command
+        {
+            assert!(action.is_none());
+            assert_eq!(vm_identifier.as_deref(), Some("myvm"));
+            assert_eq!(resolution, "1280x720");
+            assert_eq!(depth, 16);
+            assert!(minimal);
+            assert_eq!(user, "devuser");
+            assert_eq!(resource_group.as_deref(), Some("rg1"));
+            assert!(yes);
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_install_without_vm() {
+        let cli = Cli::parse_from(["azlin", "gui", "install"]);
+        if let Commands::Gui { action, .. } = cli.command {
+            match action {
+                Some(GuiAction::Install {
+                    vm_identifier,
+                    protocol,
+                    ..
+                }) => {
+                    assert!(vm_identifier.is_none());
+                    assert_eq!(protocol, GuiProtocol::Vnc, "default protocol is vnc");
+                }
+                other => panic!("Expected Install action, got {other:?}"),
+            }
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_install_with_vm() {
+        let cli = Cli::parse_from(["azlin", "gui", "install", "myvm"]);
+        if let Commands::Gui { action, .. } = cli.command {
+            match action {
+                Some(GuiAction::Install { vm_identifier, .. }) => {
+                    assert_eq!(vm_identifier.as_deref(), Some("myvm"));
+                }
+                other => panic!("Expected Install action, got {other:?}"),
+            }
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_install_protocol_rdp() {
+        for args in [
+            vec!["azlin", "gui", "install", "--protocol", "rdp"],
+            vec!["azlin", "gui", "install", "--protocol=rdp"],
+        ] {
+            let cli = Cli::parse_from(&args);
+            if let Commands::Gui { action, .. } = cli.command {
+                match action {
+                    Some(GuiAction::Install { protocol, .. }) => {
+                        assert_eq!(protocol, GuiProtocol::Rdp, "failed for {args:?}");
+                    }
+                    other => panic!("Expected Install action, got {other:?}"),
+                }
+            } else {
+                panic!("Expected Gui command");
+            }
+        }
+    }
+
+    #[test]
+    fn test_gui_install_with_vm_and_protocol() {
+        let cli = Cli::parse_from(["azlin", "gui", "install", "myvm", "--protocol=rdp"]);
+        if let Commands::Gui { action, .. } = cli.command {
+            match action {
+                Some(GuiAction::Install {
+                    vm_identifier,
+                    protocol,
+                    ..
+                }) => {
+                    assert_eq!(vm_identifier.as_deref(), Some("myvm"));
+                    assert_eq!(protocol, GuiProtocol::Rdp);
+                }
+                other => panic!("Expected Install action, got {other:?}"),
+            }
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    /// A VM literally named `install` is shadowed by the subcommand. `--` is the
+    /// documented escape hatch that reaches it.
+    #[test]
+    fn test_gui_double_dash_reaches_a_vm_named_install() {
+        let cli = Cli::parse_from(["azlin", "gui", "--", "install"]);
+        if let Commands::Gui {
+            action,
+            vm_identifier,
+            ..
+        } = cli.command
+        {
+            assert!(action.is_none(), "`--` must suppress subcommand matching");
+            assert_eq!(vm_identifier.as_deref(), Some("install"));
+        } else {
+            panic!("Expected Gui command");
+        }
+    }
+
+    #[test]
+    fn test_gui_install_rejects_an_unknown_protocol() {
+        assert!(
+            Cli::try_parse_from(["azlin", "gui", "install", "--protocol", "spice"]).is_err(),
+            "unknown protocols must be rejected at parse time"
+        );
+    }
+
+    // =====================================================================
     // 13. CLI STRUCTURE VALIDATION — clap debug_assert still passes
     // =====================================================================
 

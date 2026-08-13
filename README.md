@@ -406,7 +406,7 @@ This section provides detailed examples of all azlin commands with practical use
 - [VM Maintenance](#vm-maintenance) - Update tools and packages
 - [Connection](#connection) - Connect to VMs
 - [Azure Bastion](#azure-bastion-secure-vm-access) - Secure VM access without public IPs
-- [GUI & Remote Desktop](#gui--remote-desktop) - X11 forwarding and VNC desktop
+- [GUI & Remote Desktop](#gui--remote-desktop) - X11 forwarding and containerised VNC/RDP desktop
 - [Monitoring](#monitoring) - Monitor VM status and processes
 - [File Operations](#file-operations) - Transfer and sync files
 - [Shared Storage](#shared-storage) - NFS storage across VMs
@@ -1080,14 +1080,16 @@ Run graphical applications from your Azure VMs. Two approaches are supported:
 azlin connect --x11 my-vm
 # Then on the VM: gitk --all &
 
-# VNC desktop: full remote desktop session
+# Remote desktop: install the container stack once, then connect
+azlin gui install my-vm                     # VNC (default)
+azlin gui install my-vm --protocol rdp      # or RDP
 azlin gui my-vm
-azlin gui my-vm --resolution 2560x1440
 ```
 
 - **X11 forwarding** (`--x11`) tunnels individual app windows over SSH. Best for lightweight tools like gitk, meld, and xeyes.
-- **VNC desktop** (`azlin gui`) launches a full XFCE desktop, auto-installs dependencies, and opens your local VNC viewer. VNC runs on localhost only with random per-session passwords -- all traffic is encrypted through the SSH or bastion tunnel.
-- **First-run GUI setup** uses the same `--user` and `--key` values as the tunnel, runs non-interactively, and exits with the setup error if dependency installation cannot finish.
+- **Remote desktop** (`azlin gui`) opens a full XFCE desktop in your local VNC viewer or RDP client. Azure Linux ships no desktop, VNC server or RDP server in its repositories, so the stack runs as a pinned container on the VM's Docker; install it once with `azlin gui install`.
+- **Security**: the desktop port is published on the VM's `127.0.0.1` only and reached through the existing SSH or bastion tunnel. azlin never creates a network security group rule for 5901 or 3389, and the desktop always has a password generated on the VM.
+- **Not installed?** `azlin gui` exits non-zero and prints the exact `azlin gui install` command. It never installs implicitly. To reach a VM literally named `install`, use `azlin gui -- install`.
 
 Both approaches work transparently through Azure Bastion.
 

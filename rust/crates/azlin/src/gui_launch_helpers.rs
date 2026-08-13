@@ -221,27 +221,10 @@ fn leading_shell_command_word(command: &str) -> Option<String> {
     }
 }
 
-fn is_snap_sensitive_browser_command(command: &str) -> bool {
-    leading_shell_command_word(command)
-        .map(|word| is_snap_sensitive_browser_program(&word))
-        .unwrap_or(false)
-}
-
 fn build_conditional_scoped_x11_command(command: &str) -> String {
     let escaped_warning = shell_escape(SYSTEMD_RUN_WARNING);
     format!(
         "if {snap_probe}; then if {systemd_probe}; then exec systemd-run --user --scope --quiet -- {command}; else >&2 printf '%s\\n' {warning}; exec {command}; fi; else exec {command}; fi",
-        snap_probe = SNAP_CHROMIUM_PROBE,
-        systemd_probe = USER_SYSTEMD_PROBE,
-        warning = escaped_warning,
-        command = command
-    )
-}
-
-fn build_conditional_scoped_vnc_command(command: &str) -> String {
-    let escaped_warning = shell_escape(SYSTEMD_RUN_WARNING);
-    format!(
-        "if {snap_probe}; then if {systemd_probe}; then systemd-run --user --scope --quiet -- {command}; else >&2 printf '%s\\n' {warning}; {command}; fi; else {command}; fi",
         snap_probe = SNAP_CHROMIUM_PROBE,
         systemd_probe = USER_SYSTEMD_PROBE,
         warning = escaped_warning,
@@ -266,13 +249,4 @@ pub(crate) fn maybe_wrap_x11_remote_command(
         .collect::<Vec<_>>()
         .join(" ");
     Some(vec![build_conditional_scoped_x11_command(&escaped_args)])
-}
-
-pub(crate) fn maybe_wrap_vnc_app_command(command: &str) -> String {
-    if !is_snap_sensitive_browser_command(command) {
-        return command.to_string();
-    }
-
-    let shell_command = format!("sh -lc {}", shell_escape(command));
-    build_conditional_scoped_vnc_command(&shell_command)
 }

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`azlin gui install` — containerised remote desktop**: Azure Linux ships no
+  desktop environment, VNC server or RDP server in any of its repositories
+  (verified against 4.0 `base` + `microsoft` and 3.0 `base` + `extended`), so
+  the previous package-based `azlin gui` setup could never succeed. The desktop
+  stack now runs as a pinned prebuilt container on the VM's Docker, which the
+  azlin bootstrap already installs.
+  - `azlin gui install [VM] --protocol vnc|rdp` installs the stack;
+    `--uninstall` removes it. `azlin gui [VM]` connects, and is otherwise
+    unchanged.
+  - `vnc` (default) uses `consol/debian-xfce-vnc:v2.0.4`, which serves genuine
+    TigerVNC RFB on 5901, so any standard VNC viewer works. `rdp` uses
+    `lscr.io/linuxserver/rdesktop:ubuntu-xfce` (xrdp on 3389) and azlin
+    auto-launches `xfreerdp`/`mstsc` when present.
+  - **No NSG rule is ever created, modified or read.** The container publishes
+    its port on the VM's `127.0.0.1` only, and access is exclusively through
+    azlin's existing SSH or bastion tunnel.
+  - The desktop is never unauthenticated: a 32-hex-character password is
+    generated on the VM and passed via a `0600` `--env-file`, so it never
+    appears in `ps` or `docker inspect`.
+  - Install is idempotent, survives reboot (`--restart unless-stopped`), and
+    classifies every failure (Docker missing, daemon unreachable, pull failure,
+    low disk, port in use) with a distinct exit code and actionable message. A
+    zero exit without a completion marker is treated as a failure, so a
+    silently-not-installed stack can never be reported as success.
+  - `azlin gui` never installs implicitly: if nothing is installed it exits
+    non-zero with the exact command to run. A VM literally named `install` is
+    reachable via `azlin gui -- install`.
+  - `--minimal` and `--app` are still accepted but now warn that they are
+    ignored, because the container owns its own session.
+
 ### Fixed
 - **Resource leak in `destroy`/`delete`/`kill`/`killall`**: these commands deleted
   the VM, its disks and its NIC but left the session's Public IP and Network

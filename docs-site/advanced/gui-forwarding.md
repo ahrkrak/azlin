@@ -1,15 +1,14 @@
 # GUI Forwarding & Remote Desktop
 
-Run graphical applications on your Azure VMs and display them locally. azlin supports two approaches: **VNC** for a full remote desktop session and **X11 forwarding** for lightweight GUI apps.
+Run graphical applications on your Azure VMs and display them locally. azlin supports two approaches: a **containerised remote desktop** (VNC or RDP) for a full session, and **X11 forwarding** for lightweight GUI apps.
 
 ## Overview
 
 | Approach | Best For | Latency | Setup |
 |----------|----------|---------|-------|
-| VNC Desktop | Full desktop environment, multiple apps | Higher (full desktop) | Auto-managed |
-| VNC Minimal | Window manager only, no desktop overhead | Medium | Auto-managed |
-| VNC Single App | One app in VNC (e.g. browser), exits when app closes | Medium | Auto-managed |
-| X11 Forwarding | Individual GUI apps (gitk, meld, xeyes) | Low (per-window) | Minimal |
+| VNC desktop (container) | Full XFCE desktop, multiple apps | Higher (full desktop) | `azlin gui install` |
+| RDP desktop (container) | Full XFCE desktop from a Windows/RDP client | Higher (full desktop) | `azlin gui install --protocol rdp` |
+| X11 forwarding | Individual GUI apps (gitk, meld, xeyes) | Low (per-window) | Minimal |
 
 Both approaches work transparently through Azure Bastion tunnels when your VM has no public IP.
 
@@ -30,99 +29,167 @@ Both approaches work transparently through Azure Bastion tunnels when your VM ha
 - Log out and back in after installation.
 - Enable "Allow connections from network clients" in XQuartz Preferences > Security.
 
-**VNC Viewer** (for `azlin gui` only):
+**VNC viewer** (for `azlin gui --protocol vnc`, the default):
 - `azlin gui` launches a local `vncviewer` command.
 - [TigerVNC](https://tigervnc.org/) is the tested viewer and provides that binary on Linux, macOS, and Windows/WSL setups.
 
 ### Remote VM
 
-`azlin gui` automatically installs any missing VNC/desktop packages on first
-use. `azlin connect --x11` does **not** install remote GUI applications or X11
-packages for you; it only enables X11 forwarding on the SSH connection.
+The desktop stack is installed once with `azlin gui install`, which runs it as
+a container on the VM's Docker (installed by the azlin bootstrap). `azlin gui`
+itself never installs anything implicitly. `azlin connect --x11` does **not**
+install remote GUI applications or X11 packages for you; it only enables X11
+forwarding on the SSH connection.
 
-## VNC Desktop
+## Remote Desktop (containerised)
 
-Launch a full remote desktop session on the VM and view it locally.
+Azure Linux ships **no** desktop environment, VNC server or RDP server in its
+repositories — not in 4.0 (`base` + `microsoft`) and not in 3.0 (`base` +
+`extended`). A package-based install can therefore never succeed. azlin instead
+runs a prebuilt desktop container on the VM's Docker, which the azlin bootstrap
+already installs (`moby-engine` + `docker-cli`).
 
-### Usage
+Install the stack once, then connect as often as you like:
 
 ```bash
-# Full XFCE desktop (default)
+# Install the desktop stack (VNC, the default)
+azlin gui install my-vm
+
+# Or install the RDP variant
+azlin gui install my-vm --protocol rdp
+
+# Connect
 azlin gui my-vm
-
-# Minimal window manager only (openbox) -- no desktop overhead
-azlin gui my-vm --minimal
-
-# Single application mode -- VNC exits when the app closes
-azlin gui my-vm --app "chromium-browser --no-sandbox"
-azlin gui my-vm --app "gimp"
-
-# Custom resolution
-azlin gui my-vm --resolution 2560x1440
-
-# Specify SSH user and key for setup and tunneling
-azlin gui my-vm --user azureuser --key ~/.ssh/azlin_key
 ```
 
-### VNC Modes
+`azlin gui` never installs implicitly. If nothing is installed it exits
+non-zero and tells you the exact `azlin gui install` command to run.
 
-| Mode | Flag | Desktop | Window Manager | Best For |
-|------|------|---------|---------------|----------|
-| Full Desktop | *(default)* | XFCE | XFCE WM | Multi-app workflows, full desktop experience |
-| Minimal | `--minimal` | None | openbox | Lightweight sessions, launch apps from right-click menu |
-| Single App | `--app "cmd"` | None | None | Running one heavy GUI app (browser, IDE, GIMP) |
+### Protocols and clients
 
-**Minimal mode** starts only the openbox window manager. Right-click on the desktop for an app launcher menu. Drag window edges to resize. Much lighter than a full desktop.
+| `--protocol` | Container image | Server | Port (VM loopback) | Local client |
+|---|---|---|---|---|
+| `vnc` *(default)* | `consol/debian-xfce-vnc:v2.0.4` | TigerVNC (real RFB) | `127.0.0.1:5901` | any standard VNC viewer (`vncviewer`) |
+| `rdp` | `lscr.io/linuxserver/rdesktop:ubuntu-xfce` | xrdp | `127.0.0.1:3389` | `xfreerdp`, Windows `mstsc`, macOS Remote Desktop |
 
-**Single app mode** runs the specified command directly. The VNC window shows only that application. When the app is closed, the VNC server exits automatically.
+Both images ship XFCE and have amd64 and arm64 variants. Recorded amd64 digests:
 
-!!! note "Chromium/browsers"
-    Use `--no-sandbox` when running Chromium in VNC: `azlin gui my-vm --app "chromium-browser --no-sandbox"`. When azlin launches Chromium directly, it auto-wraps snap-backed invocations in `systemd-run --user --scope`, which avoids the common `is not a snap cgroup` failure on Azure Linux 4.0 VMs.
+- `consol/debian-xfce-vnc:v2.0.4` — `sha256:b6d53e9f797bb4b4e3b7b317ec07e4242f33c7e3061af16d18685f6866295e58`
+- `lscr.io/linuxserver/rdesktop:ubuntu-xfce` — `sha256:85f5e20fbed17a13be2619aafffedd6df2c3c68076693caf951176f133765062`
 
-### How It Works
+`linuxserver/webtop` was deliberately **not** used: it serves KasmVNC over
+WebSockets, which a standard VNC viewer cannot speak.
 
-1. **Dependency check**: azlin SSHs into the VM with the same `--user` and `--key` settings you provided and checks for required packages (`tigervnc-standalone-server`, `xfce4`, `dbus-x11`). Missing packages are installed automatically.
-2. **VNC server start**: A TigerVNC server is started on the VM, bound to `localhost` only (no network exposure). A random password is generated for the session.
-3. **Tunnel creation**: azlin creates an SSH tunnel (or bastion tunnel) forwarding a local port to the VNC server port on the VM.
-4. **Viewer launch**: azlin launches your local VNC viewer, connecting to `localhost:<local_port>` with the session password.
-5. **Cleanup**: When you close the VNC viewer, azlin stops the VNC server on the VM and tears down the tunnel.
+For `rdp`, azlin looks for a local RDP client (`xfreerdp3`, `xfreerdp`,
+`mstsc`) and launches it against the tunnel. If none is found it prints the
+host, port, username and password so you can connect manually.
 
-### Options
+### The `install` subcommand vs. a VM named `install`
+
+`azlin gui` accepts both a positional VM identifier and an `install`
+subcommand, so a VM literally named `install` would be ambiguous. The
+subcommand always wins; use the standard `--` separator to reach the VM:
+
+```bash
+azlin gui install      # the install subcommand
+azlin gui -- install   # a VM named "install"
+```
+
+Note the flag is `--protocol vnc` / `--protocol=vnc` (clap syntax), not
+`--protocol:vnc`.
+
+### Install options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--resolution` | `1920x1080` | Desktop resolution (WIDTHxHEIGHT) |
-| `--depth` | `24` | VNC color depth (8, 16, or 24) |
+| `--protocol` | `vnc` | `vnc` or `rdp` |
+| `--resolution` | `1920x1080` | Desktop resolution (WIDTHxHEIGHT), VNC only |
+| `--depth` | `24` | Colour depth (8, 16 or 24), VNC only |
+| `--uninstall` | false | Remove the container and its state instead of installing |
+| `--resource-group` | *(from session)* | Resource group |
 | `--user` | `azureuser` | SSH username on the VM |
 | `--key` | `~/.ssh/azlin_key` | Path to SSH private key |
-| `--minimal` | false | Use openbox window manager instead of full XFCE desktop |
-| `--app` | none | Run a single application (e.g. `--app "chromium-browser --no-sandbox"`) |
-| `-y, --yes` | false | Compatibility flag; GUI dependency setup is already non-interactive |
+| `-y, --yes` | false | Accepted for CLI compatibility; install is already non-interactive |
 
-### Dependency Management
+Install is **idempotent**. If a container already exists with the same image
+and protocol it is simply started and the command reports
+`already-installed`. Otherwise the old container is removed and recreated. The
+container runs with `--restart unless-stopped`, so the desktop survives a VM
+reboot.
 
-azlin automatically detects and installs missing packages on first use:
+### Connect options
 
-| Package | Purpose |
-|---------|---------|
-| `tigervnc-standalone-server` | VNC server |
-| `xfce4` | Lightweight desktop environment |
-| `xfce4-terminal` | Terminal emulator for the desktop |
-| `dbus-x11` | D-Bus session bus (required by XFCE) |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--resolution` | `1920x1080` | Accepted; the geometry is fixed at install time |
+| `--depth` | `24` | Accepted; the depth is fixed at install time |
+| `--user` | `azureuser` | SSH username on the VM |
+| `--key` | `~/.ssh/azlin_key` | Path to SSH private key |
+| `--minimal` | false | **Ignored** — the container owns its session. A warning is printed. |
+| `--app` | none | **Ignored** — the container owns its session. A warning is printed. |
+| `-y, --yes` | false | Compatibility flag |
 
-Installation happens once per VM and takes 2-3 minutes. Subsequent connections
-skip this step. The package setup is non-interactive; `--yes` is accepted for
-CLI compatibility but does not change the behavior. If setup cannot finish
-cleanly, `azlin gui` exits with the setup error instead of waiting indefinitely.
+`--minimal` and `--app` are accepted so existing scripts keep parsing, but a
+containerised desktop manages its own session, so azlin warns rather than
+silently dropping them.
+
+### How it works
+
+1. **Detect**: azlin runs a small read-only probe over the existing SSH or
+   bastion connection. It reports whether Docker is present, whether the daemon
+   is reachable as this user, and the state of the `azlin-gui` container. The
+   probe always exits 0, so a non-zero exit unambiguously means an SSH
+   transport failure, never "not installed".
+2. **Install** (`azlin gui install` only): pulls the pinned image, generates a
+   password **on the VM**, writes it to a `0600` env file under `~/.azlin/gui/`,
+   and starts the container with the desktop port published on `127.0.0.1` only.
+3. **Start**: if the container exists but is stopped, `azlin gui` starts it.
+   That is a connect-time repair, not an install.
+4. **Tunnel**: azlin forwards a local port to the container's loopback-bound
+   port on the VM, through the same SSH or bastion tunnel it already uses.
+5. **Launch**: the local VNC viewer or RDP client is pointed at
+   `localhost:<local_port>`.
+6. **Cleanup**: the tunnel is torn down when you disconnect. The container keeps
+   running so the next connect is instant; remove it with
+   `azlin gui install my-vm --uninstall`.
 
 ### Security
 
-VNC security is handled through multiple layers:
+This is the strictest part of the design.
 
-- **Localhost binding**: The VNC server listens on `127.0.0.1` only. It is never exposed to the network.
-- **Random passwords**: A unique password is generated for each session using `openssl rand`. Passwords are not stored on disk.
-- **SSH tunnel**: All VNC traffic travels through the encrypted SSH (or bastion) tunnel. No VNC traffic crosses the network unencrypted.
-- **Automatic cleanup**: The VNC server is stopped when the session ends, leaving no listening services behind.
+- **No NSG rule is ever created, modified or read.** There is no code path and
+  no flag that opens 5901 or 3389 to the internet.
+- **Loopback-only publish**: the container publishes
+  `-p 127.0.0.1:5901:5901` (or `3389`). Even if a permissive NSG rule existed,
+  the port is unreachable from off the VM.
+- **noVNC (6901) is never published at all.**
+- **Always authenticated**: a 32-hex-character password is generated on the VM
+  with `openssl rand -hex 16` (falling back to `/dev/urandom`). The desktop is
+  never left unauthenticated, even on localhost.
+- **Password never in argv**: it is passed via `--env-file`, so it does not
+  appear in `ps` or `docker inspect` output. The env file, the VNC auth blob and
+  the RDP password file are all `0600` inside a `0700` `~/.azlin/gui/`.
+- **Encrypted transport only**: all desktop traffic travels inside the SSH or
+  bastion tunnel, which uses only port 22.
+
+### Failure modes
+
+The install script never swallows an error. Each failure exits with a distinct
+code and azlin turns it into an actionable message:
+
+| Exit | Meaning | Fix |
+|---|---|---|
+| 2 | Docker not installed on the VM | Recreate the VM with the azlin bootstrap, or install `moby-engine` |
+| 3 | Docker daemon unreachable as this user | `sudo usermod -aG docker $USER`, then reconnect |
+| 4 | Image pull failed | Check the VM's outbound network / registry reachability (the daemon's own error is included) |
+| 5 | Password generation failed | Unexpected; check the VM's entropy sources |
+| 6 | Container started but auth could not be configured | Re-run install; report if it repeats |
+| 7 | Less than 4 GiB free | Free disk or use a larger OS disk |
+| 8 | Desktop port already in use on the VM | Stop the conflicting listener |
+| 9 | `docker run` failed | The daemon's own error text is included |
+
+A zero exit **without** the expected completion marker is also treated as a
+failure, so a silently-not-installed stack can never be reported as success.
 
 ## X11 Forwarding
 
@@ -183,60 +250,28 @@ If you open an interactive X11 shell with `azlin connect --x11 my-vm` and then l
 
 ## Troubleshooting
 
-### VNC: Connection refused when viewer launches
+### Desktop: `the remote desktop is not installed on this VM`
 
-The tunnel may not be ready yet. Retry the connection:
+Run the command azlin prints, e.g. `azlin gui install my-vm`.
+
+### Desktop: `Connection refused` when the viewer launches
+
+The tunnel may not be ready yet. Retry `azlin gui my-vm`.
+
+### Desktop: screen resolution is wrong
+
+Geometry is baked in at install time. Re-run install with the resolution you
+want:
 
 ```bash
-azlin gui my-vm
+azlin gui install my-vm --resolution 2560x1440
 ```
 
-### VNC: `GUI dependency/setup phase failed (exit 1): exit code 1`
-
-This empty setup error usually means the local azlin client is too old and is
-packaging the remote GUI dependency check incorrectly, especially on private
-VMs that route through Azure Bastion. Upgrade or rebuild azlin, then retry:
+### Desktop: start over
 
 ```bash
-azlin gui my-vm
-```
-
-If the error persists after upgrading, verify that basic SSH still works first:
-
-```bash
-azlin connect my-vm --no-tmux -- whoami
-```
-
-### VNC: Black screen or no desktop
-
-The desktop environment may not have started correctly:
-
-```bash
-# SSH into the VM and check the VNC log
-azlin connect my-vm
-cat ~/.vnc/*.log
-
-# Restart the desktop environment
-vncserver -kill :1
-vncserver -localhost yes -geometry 1920x1080 :1
-```
-
-### VNC: Screen resolution is wrong
-
-Pass the `--resolution` flag:
-
-```bash
-azlin gui my-vm --resolution 2560x1440
-```
-
-### VNC: Clipboard not working
-
-Install `autocutsel` on the VM for bidirectional clipboard support:
-
-```bash
-# On the VM
-sudo dnf5 install -y autocutsel
-autocutsel -fork
+azlin gui install my-vm --uninstall
+azlin gui install my-vm
 ```
 
 ### X11: Can't open display
@@ -262,11 +297,11 @@ xauth generate $DISPLAY . trusted
 
 ### X11: Apps are slow or laggy
 
-X11 forwarding sends individual draw commands over the network. For heavy GUI usage, switch to VNC (`azlin gui`) which sends compressed screen updates instead.
+X11 forwarding sends individual draw commands over the network. For heavy GUI usage, switch to the containerised desktop (`azlin gui`) which sends compressed screen updates instead.
 
 ### Bastion Tunnel Issues
 
-Both X11 and VNC work through Azure Bastion tunnels. If connections fail:
+X11, VNC and RDP all work through Azure Bastion tunnels. If connections fail:
 
 ```bash
 # Verify Bastion tunnel is working
@@ -281,7 +316,7 @@ azlin connect --x11 my-vm
 
 ### Performance Tips
 
-- **VNC**: Best for multi-app workflows or desktop environments. Choose a reasonable resolution.
+- **Remote desktop**: Best for multi-app workflows or desktop environments. Choose a reasonable resolution at install time. Allow a few minutes for the first image pull (~1-2 GiB).
 - **X11**: Best for lightweight apps (gitk, meld, xeyes). Avoid full browsers or IDEs.
 - **Region proximity**: VMs in regions closer to you will have noticeably lower GUI latency.
 - **VM size**: GUI rendering uses CPU; choose at least `Standard_D2s_v3` or above for smooth performance.
