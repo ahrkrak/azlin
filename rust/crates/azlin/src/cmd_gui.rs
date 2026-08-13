@@ -74,9 +74,6 @@ pub(crate) async fn dispatch(
         eprintln!("         Run an application from inside the desktop session instead.");
     }
 
-    // Step 1: Check local prerequisites
-    check_local_deps()?;
-
     // Step 2: Resolve VM
     let rg = resolve_resource_group(resource_group)?;
 
@@ -118,6 +115,13 @@ pub(crate) async fn dispatch(
     }
 
     let protocol = status.protocol.unwrap_or(GuiProtocol::Vnc);
+
+    // Local viewer prerequisites are checked only once we know the desktop is
+    // actually installed and which protocol it speaks. Checking earlier would
+    // mask the actionable "run azlin gui install" error behind a local tooling
+    // error, and would demand a VNC viewer even for an RDP desktop.
+    check_local_deps(protocol)?;
+
     let remote_port = status
         .host_port
         .unwrap_or_else(|| azlin_core::gui_container::image_for(protocol).container_port);
@@ -198,7 +202,14 @@ fn start_desktop(ssh_cmd_prefix: &[String]) -> Result<()> {
 // Local prerequisite checks
 // ---------------------------------------------------------------------------
 
-fn check_local_deps() -> Result<()> {
+fn check_local_deps(protocol: GuiProtocol) -> Result<()> {
+    // RDP is served by a local RDP client, which azlin locates separately and
+    // for which it can fall back to printing manual instructions. There is
+    // nothing to require here.
+    if protocol == GuiProtocol::Rdp {
+        return Ok(());
+    }
+
     // Check for X server availability
     let display_set = std::env::var("DISPLAY")
         .map(|d| !d.is_empty())
@@ -874,4 +885,11 @@ mod tests {
         assert!(text.contains("Microsoft Remote Desktop"));
         assert!(text.contains("abc"));
     }
+    #[test]
+    fn rdp_never_requires_a_local_vnc_viewer() {
+        // An RDP desktop is reached with an RDP client; requiring vncviewer
+        // would make `azlin gui` unusable on a correct RDP setup.
+        assert!(check_local_deps(GuiProtocol::Rdp).is_ok());
+    }
+
 }

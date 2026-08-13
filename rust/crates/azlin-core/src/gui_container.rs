@@ -404,6 +404,13 @@ pub fn parse_detect_output(output: &str) -> GuiStatus {
 /// already match the plan is left in place (and started if stopped); anything
 /// else is removed and recreated. Every failure mode is reported with a distinct
 /// `azlin-error:` marker rather than being swallowed.
+/// Password entropy note (verified on a live VM, 2026-08-13):
+/// the script generates 32 hex characters. RDP consumes all of them
+/// (`chpasswd` -> yescrypt `$y$` hash). The RFB protocol, however, truncates
+/// VNC passwords to **8 bytes**, so VNC authentication is effectively ~32 bits.
+/// That is acceptable here only because 5901 is bound to 127.0.0.1 and is
+/// reachable solely through the SSH tunnel -- it is never exposed to a network,
+/// so there is no remote brute-force surface.
 pub fn build_install_script(plan: &GuiInstallPlan) -> String {
     let name = sq(&plan.container_name);
     let image = sq(plan.image.reference);
@@ -467,10 +474,43 @@ pub fn build_install_script(plan: &GuiInstallPlan) -> String {
            echo 'azlin-error: docker is not installed on this VM' >&2; exit 2; fi; \
          if ! docker info >/dev/null 2>&1; then \
            echo 'azlin-error: the docker daemon is not reachable as this user' >&2; exit 3; fi; \
-         AVAIL=$(df -Pk /var/lib/docker 2>/dev/null || df -Pk /); \
+         DROOT=$(docker info -f '{{{{.DockerRootDir}}}}' 2>/dev/null || true); \
+         [ -n \"$DROOT\" ] || DROOT=/var/lib/docker; \
+         AVAIL=$(df -Pk \"$DROOT\" 2>/dev/null || df -Pk /); \
          AVAIL=$(echo \"$AVAIL\" | awk 'NR==2 {{print $4}}'); \
          if [ -n \"$AVAIL\" ] && [ \"$AVAIL\" -lt 4194304 ]; then \
-           echo \"azlin-error: less than 4 GiB free for the container image (${{AVAIL}} KiB available)\" >&2; exit 7; fi; \
+           BIGGEST=''; BIGFREE=0; \
+           for CAND in /mnt/home-data /mnt /home /datadrive; do \
+             [ -d \"$CAND\" ] || continue; \
+             CF=$(df -Pk \"$CAND\" 2>/dev/null | awk 'NR==2 {{print $4}}'); \
+             [ -n \"$CF\" ] || continue; \
+             if [ \"$CF\" -gt \"$BIGFREE\" ]; then BIGFREE=\"$CF\"; BIGGEST=\"$CAND\"; fi; \
+           done; \
+           IMGS=$(docker images -q 2>/dev/null | wc -l); \
+           CTRS=$(docker ps -aq 2>/dev/null | wc -l); \
+           if [ -n \"$BIGGEST\" ] && [ \"$BIGFREE\" -ge 4194304 ] && [ \"$IMGS\" -eq 0 ] && [ \"$CTRS\" -eq 0 ]; then \
+             echo \"azlin-note: relocating docker and containerd storage to $BIGGEST ($AVAIL KiB free on $DROOT)\"; \
+             sudo systemctl stop docker.socket docker containerd >/dev/null 2>&1 || true; \
+             if ! sudo mkdir -p \"$BIGGEST/docker\" \"$BIGGEST/containerd\"; then \
+               echo 'azlin-error: could not create the relocated docker storage directories' >&2; exit 7; fi; \
+             if ! grep -q ' /var/lib/containerd ' /etc/fstab 2>/dev/null; then \
+               printf '%s /var/lib/docker none bind 0 0\\n%s /var/lib/containerd none bind 0 0\\n' \
+                 \"$BIGGEST/docker\" \"$BIGGEST/containerd\" | sudo tee -a /etc/fstab >/dev/null || {{ \
+                 echo 'azlin-error: could not persist the relocated docker storage in /etc/fstab' >&2; exit 7; }}; \
+             fi; \
+             sudo mkdir -p /var/lib/docker /var/lib/containerd; \
+             mountpoint -q /var/lib/docker || sudo mount --bind \"$BIGGEST/docker\" /var/lib/docker; \
+             mountpoint -q /var/lib/containerd || sudo mount --bind \"$BIGGEST/containerd\" /var/lib/containerd; \
+             command -v restorecon >/dev/null 2>&1 && \
+               sudo restorecon -RF /var/lib/docker /var/lib/containerd >/dev/null 2>&1 || true; \
+             if ! sudo systemctl start containerd docker; then \
+               echo 'azlin-error: could not restart docker after relocating its storage' >&2; exit 7; fi; \
+             for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 2; done; \
+             AVAIL=$(df -Pk \"$BIGGEST\" 2>/dev/null | awk 'NR==2 {{print $4}}'); \
+           fi; \
+         fi; \
+         if [ -n \"$AVAIL\" ] && [ \"$AVAIL\" -lt 4194304 ]; then \
+           echo \"azlin-error: less than 4 GiB free for the container image on the docker data root $DROOT (${{AVAIL}} KiB available)\" >&2; exit 7; fi; \
          STATE_DIR=\"$HOME/.azlin/gui\"; mkdir -p \"$STATE_DIR\"; chmod 700 \"$STATE_DIR\"; \
          CUR=$(docker inspect -f '{{{{.Config.Image}}}}' {name} 2>/dev/null || true); \
          CUR_PROTO=$(docker inspect -f '{{{{index .Config.Labels \"azlin.gui.protocol\"}}}}' {name} 2>/dev/null || true); \
@@ -966,6 +1006,41 @@ mod tests {
         assert_eq!(sq("it's"), r"'it'\''s'");
     }
 }
+
+    #[test]
+    fn disk_check_uses_the_real_docker_data_root_not_a_hardcoded_path() {
+        // A live Azure Linux 4.0 VM has a 5 GB OS disk with ~1 GiB free, while
+        // azlin's 100 GB home disk is mounted elsewhere. Measuring a hardcoded
+        // /var/lib/docker reports the wrong filesystem once the data root moves.
+        let script = build_install_script(&GuiInstallPlan::new(
+            GuiProtocol::Vnc,
+            DesktopGeometry::default(),
+        ));
+        assert!(script.contains("DockerRootDir"));
+        assert!(script.contains(r#"df -Pk "$DROOT""#));
+    }
+
+    #[test]
+    fn data_root_relocation_only_happens_on_a_pristine_docker() {
+        // Relocating the data root restarts dockerd, which would disrupt any
+        // container the user is already running. Only do it when there is
+        // provably nothing to disrupt.
+        let script = build_install_script(&GuiInstallPlan::new(
+            GuiProtocol::Vnc,
+            DesktopGeometry::default(),
+        ));
+        assert!(script.contains("docker images -q"));
+        // containerd, not docker's data-root, owns layer extraction on modern
+        // moby: relocating data-root alone leaves snapshots on the small OS disk.
+        assert!(script.contains("/var/lib/containerd"));
+        // Azure Linux runs SELinux in Enforcing mode; a bind mount arrives as
+        // unlabeled_t and the container's entrypoint then fails with
+        // "permission denied" on exec. Relabel before restarting docker.
+        assert!(script.contains("restorecon -RF /var/lib/docker /var/lib/containerd"));
+        assert!(script.contains("docker ps -aq"));
+        assert!(script.contains(r#"[ "$IMGS" -eq 0 ]"#));
+        assert!(script.contains(r#"[ "$CTRS" -eq 0 ]"#));
+    }
 
 #[cfg(all(test, unix))]
 mod shell_syntax_tests {

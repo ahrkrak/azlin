@@ -188,7 +188,7 @@ code and azlin turns it into an actionable message:
 | 4 | Image pull failed | Check the VM's outbound network / registry reachability (the daemon's own error is included) |
 | 5 | Password generation failed | Unexpected; check the VM's entropy sources |
 | 6 | Container started but auth could not be configured | Re-run install; report if it repeats |
-| 7 | Less than 4 GiB free | Free disk or use a larger OS disk |
+| 7 | Less than 4 GiB free on Docker's data root, and no larger disk to relocate to | Free disk, or attach a larger data disk |
 | 8 | Desktop port already in use on the VM | Stop the conflicting listener |
 | 9 | `docker run` failed | The daemon's own error text is included |
 
@@ -344,3 +344,50 @@ No additional firewall or NSG rules are needed, and azlin never creates one. X11
 - **X11**: Best for lightweight apps (gitk, meld, xeyes). Avoid full browsers or IDEs.
 - **Region proximity**: VMs in regions closer to you will have noticeably lower GUI latency.
 - **VM size**: GUI rendering uses CPU; choose at least `Standard_D2s_v3` or above for a smooth experience.
+
+
+## Disk layout on Azure Linux (measured on a live VM)
+
+A default `azlin new` VM has a **4.7 GiB OS disk with ~1.1 GiB free**, while the
+data disk mounted at `/mnt/home-data` has ~91 GiB free. The desktop images are
+large (measured: VNC 2.82 GB, RDP ~2.7 GB, 5.52 GB with both pulled), so the
+install would always fail on a stock VM.
+
+`azlin gui install` therefore relocates container storage automatically when the
+data root is too small **and Docker is pristine** (zero images, zero containers):
+
+- Bind-mounts **both** `/var/lib/docker` *and* `/var/lib/containerd` onto the
+  large disk. Relocating only Docker's `data-root` is **not** sufficient: modern
+  moby extracts layers via containerd, whose root is not governed by
+  `data-root`, so the pull still fails with `no space left on device`.
+- Adds `/etc/fstab` entries so the relocation survives a reboot.
+- Runs `restorecon -RF` on both paths. Azure Linux runs SELinux in **Enforcing**
+  mode and a fresh bind mount arrives as `unlabeled_t`, which makes the
+  container entrypoint fail with `exec ...: permission denied`.
+- Never deletes existing data; it only mounts over an empty directory.
+
+Measured on `Standard_D2s_v5` in northeurope: image pull ~19 s, full
+`azlin gui install` ~95 s from a clean VM (including relocation), ~8 s for an
+idempotent re-run, 42 s to switch protocols.
+
+## Password entropy
+
+The generated password is 32 hex characters. RDP uses all of it. The RFB (VNC)
+protocol truncates passwords to **8 bytes**, so VNC authentication is ~32 bits
+of entropy. This is acceptable only because port 5901 is bound to `127.0.0.1`
+and is reachable exclusively through the SSH tunnel, so there is no network
+brute-force surface.
+
+## Verifying the security posture yourself
+
+```sh
+# on the VM: the desktop port must be loopback-bound
+ss -ltnp | grep -E '5901|3389'
+# -> LISTEN 0 4096 127.0.0.1:5901 0.0.0.0:*
+```
+
+When probing from outside, **use a banner grab, not `nc -z`**. Some networks
+contain middleboxes that complete TCP handshakes indiscriminately, so `nc -z`
+reports closed ports as open and produces a false "the desktop is exposed"
+alarm. Only a genuine protocol banner (for example `SSH-2.0-...` on port 22)
+proves a port is really reachable.
