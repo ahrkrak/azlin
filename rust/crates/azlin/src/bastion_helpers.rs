@@ -55,18 +55,33 @@ pub fn build_create_bastion_subnet_args(resource_group: &str, region: &str) -> V
 }
 
 /// Build `az network public-ip create` arguments for the bastion public IP.
-pub fn build_create_pip_args(resource_group: &str, region: &str) -> Vec<String> {
+///
+/// `ip_tags` is the already-resolved, validated Azure `--ip-tags` value
+/// (see [`azlin_core::AzlinConfig::bastion_pip_ip_tags`]).
+///
+/// **An empty `ip_tags` omits the `--ip-tags` argument entirely.** This differs
+/// from upstream `rysweet/azlin`, which always emits the flag: any first-party
+/// IP tag requires the subscription to be registered for
+/// `Microsoft.Network/AllowBringYourOwnPublicIpAddress`, and passing one on a
+/// subscription without it fails with `SubscriptionNotRegisteredForFeature`.
+pub fn build_create_pip_args(resource_group: &str, region: &str, ip_tags: &str) -> Vec<String> {
     let pip = bastion_pip_name(region);
-    vec![
+    let mut args: Vec<String> = vec![
         "network".into(), "public-ip".into(), "create".into(),
         "--resource-group".into(), resource_group.into(),
         "--name".into(), pip,
         "--location".into(), region.to_lowercase(),
         "--sku".into(), "Standard".into(),
         "--allocation-method".into(), "Static".into(),
-        "--ip-tags".into(), "FirstPartyUsage=/ATEVETNonProd".into(),
-        "--output".into(), "none".into(),
-    ]
+    ];
+    let tags = ip_tags.trim();
+    if !tags.is_empty() {
+        args.push("--ip-tags".into());
+        args.push(tags.into());
+    }
+    args.push("--output".into());
+    args.push("none".into());
+    args
 }
 
 /// Build `az network bastion create` arguments for the bastion host.
@@ -138,11 +153,17 @@ fn run_az_or_bail(args: &[String], context: &str) -> anyhow::Result<()> {
 /// Ensure the bastion VNet, AzureBastionSubnet, public IP, and bastion host
 /// all exist in the target region. Creates only what is missing (idempotent).
 ///
+/// `ip_tags` is the already-resolved Azure `--ip-tags` value applied to the
+/// bastion public IP (resolve via
+/// [`azlin_core::AzlinConfig::bastion_pip_ip_tags`]). An empty value means no
+/// IP tag is applied.
+///
 /// Uses `penguin_spinner` (via the supplied callback) for user feedback during
 /// long-running operations.
 pub fn ensure_bastion_infrastructure(
     resource_group: &str,
     region: &str,
+    ip_tags: &str,
 ) -> anyhow::Result<()> {
     // Normalize region once to avoid repeated to_lowercase() in every helper call.
     let region = &region.to_lowercase();
@@ -190,7 +211,7 @@ pub fn ensure_bastion_infrastructure(
     //    create-or-update operation)
     eprintln!("Ensuring public IP '{pip}'...");
     run_az_or_bail(
-        &build_create_pip_args(resource_group, region),
+        &build_create_pip_args(resource_group, region, ip_tags),
         &format!("Failed to create bastion public IP in {region}"),
     )?;
     eprintln!("  ✓ Public IP ready");
@@ -333,18 +354,50 @@ mod tests {
 
     #[test]
     fn test_build_create_pip_args_uses_standard_sku() {
-        let args = build_create_pip_args("my-rg", "westus");
+        let args = build_create_pip_args("my-rg", "westus", "");
         assert!(args.contains(&"azlin-bastion-westus-pip".to_string()));
         assert!(args.contains(&"Standard".to_string()));
         assert!(args.contains(&"Static".to_string()));
     }
 
     #[test]
-    fn test_build_create_pip_args_applies_first_party_ip_tag() {
-        let args = build_create_pip_args("my-rg", "westus");
-        // Every bastion public IP must carry the FirstPartyUsage IP tag.
+    fn test_build_create_pip_args_omits_ip_tags_by_default() {
+        // THE regression guard: the default config must emit no --ip-tags at all.
+        // Any first-party IP tag requires the subscription to be registered for
+        // Microsoft.Network/AllowBringYourOwnPublicIpAddress; emitting one by
+        // default makes bastion creation fail on every ordinary subscription.
+        let default_tags = azlin_core::AzlinConfig::default().bastion_pip_ip_tags();
+        let args = build_create_pip_args("my-rg", "westus", &default_tags);
+        assert!(
+            !args.contains(&"--ip-tags".to_string()),
+            "default config must not emit --ip-tags, got {args:?}"
+        );
+        assert!(!args.iter().any(|a| a.contains("FirstPartyUsage")));
+    }
+
+    #[test]
+    fn test_build_create_pip_args_omits_ip_tags_when_empty() {
+        for empty in ["", "   ", "\t"] {
+            let args = build_create_pip_args("my-rg", "westus", empty);
+            assert!(!args.contains(&"--ip-tags".to_string()));
+        }
+    }
+
+    #[test]
+    fn test_build_create_pip_args_applies_configured_ip_tag() {
+        let args = build_create_pip_args("my-rg", "westus", "FirstPartyUsage=/ATEVETNonProd");
         let tag_idx = args.iter().position(|a| a == "--ip-tags").unwrap();
         assert_eq!(args[tag_idx + 1], "FirstPartyUsage=/ATEVETNonProd");
+        // The flag must precede the trailing --output none pair.
+        assert_eq!(args[args.len() - 2], "--output");
+        assert_eq!(args[args.len() - 1], "none");
+    }
+
+    #[test]
+    fn test_build_create_pip_args_accepts_arbitrary_ip_tag_value() {
+        let args = build_create_pip_args("my-rg", "westus", "RoutingPreference=Internet");
+        let tag_idx = args.iter().position(|a| a == "--ip-tags").unwrap();
+        assert_eq!(args[tag_idx + 1], "RoutingPreference=Internet");
     }
 
     #[test]

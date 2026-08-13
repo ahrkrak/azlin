@@ -131,6 +131,33 @@ default_resource_group = "azlin-dev"
 - `azlin restore` only restores VMs from this resource group
 - Override with `--resource-group` flag
 
+## Bastion Public IP Tags
+
+Optional Azure IP tag applied to bastion public IPs.
+
+**Setting**: `bastion_pip_ip_tags`
+**Type**: `string`
+**Default**: `""` — no `--ip-tags` argument is passed
+
+**Example**:
+```toml
+bastion_pip_ip_tags = "FirstPartyUsage=/ATEVETNonProd"
+```
+
+**Environment override**: `AZLIN_BASTION_PIP_IP_TAGS` takes precedence over the
+config field. Setting it to the empty string explicitly disables the tag.
+
+**When Set**:
+- The value is passed verbatim to `az network public-ip create --ip-tags` when
+  azlin provisions bastion infrastructure
+- Must be a well-formed `Key=Value` IP tag (validated); empty means disabled
+
+> Only set this on subscriptions registered for
+> `Microsoft.Network/AllowBringYourOwnPublicIpAddress`. On any other
+> subscription, first-party IP tags cause public IP creation to fail with
+> `SubscriptionNotRegisteredForFeature`. See
+> [First-Party Usage IP Tag for Bastion Public IPs](../features/bastion-pip-first-party-ip-tag.md).
+
 ## Complete Configuration Example
 
 ```toml

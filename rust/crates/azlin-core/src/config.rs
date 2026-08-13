@@ -2,6 +2,32 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+/// Default Azure Public IP `--ip-tags` value applied to Bastion public IPs.
+///
+/// **Empty by default: no `--ip-tags` argument is passed at all.**
+///
+/// Upstream (`rysweet/azlin`) defaults this to the Microsoft-internal
+/// [`MICROSOFT_FIRST_PARTY_IP_TAGS`] value, but any first-party IP tag requires
+/// the subscription to be registered for the feature
+/// `Microsoft.Network/AllowBringYourOwnPublicIpAddress`. On subscriptions
+/// without that feature — i.e. essentially every non-Microsoft-internal
+/// subscription — the Azure control plane rejects the request with
+/// `SubscriptionNotRegisteredForFeature`, so bastion provisioning fails 100% of
+/// the time. Defaulting to "no tag" is the only value that works everywhere.
+pub const DEFAULT_BASTION_PIP_IP_TAGS: &str = "";
+
+/// The Microsoft-internal first-party IP tag. **Opt-in only** — set the
+/// `bastion_pip_ip_tags` config field or [`ENV_BASTION_PIP_IP_TAGS`] to this
+/// value on subscriptions registered for
+/// `Microsoft.Network/AllowBringYourOwnPublicIpAddress`.
+pub const MICROSOFT_FIRST_PARTY_IP_TAGS: &str = "FirstPartyUsage=/ATEVETNonProd";
+
+/// Environment variable that overrides the persisted `bastion_pip_ip_tags`
+/// config field at runtime. Must be a valid `Key=Value` IP tag; invalid values
+/// are ignored (with a warning) in favor of the persisted field / default.
+/// Setting it to the empty string explicitly disables the IP tag.
+pub const ENV_BASTION_PIP_IP_TAGS: &str = "AZLIN_BASTION_PIP_IP_TAGS";
+
 /// Known valid Azure regions (subset — allows any alphanumeric lowercase string
 /// that matches the general Azure region pattern).
 const VALID_AZURE_REGIONS: &[&str] = &[
@@ -132,6 +158,18 @@ pub struct AzlinConfig {
     pub az_cli_timeout: u64,
     /// How `azlin list -r` opens restored sessions: "auto", "tab", or "window".
     pub restore_mode: RestoreMode,
+    /// Azure IP tag applied to bastion public IPs, in the Azure CLI
+    /// `--ip-tags` form (e.g. "FirstPartyUsage=/ATEVETNonProd").
+    ///
+    /// Defaults to [`DEFAULT_BASTION_PIP_IP_TAGS`] (empty), meaning **no
+    /// `--ip-tags` argument is passed at all**. May be overridden at runtime via
+    /// the [`ENV_BASTION_PIP_IP_TAGS`] environment variable. Resolve the
+    /// effective value with [`AzlinConfig::bastion_pip_ip_tags`].
+    ///
+    /// Only set this on subscriptions registered for
+    /// `Microsoft.Network/AllowBringYourOwnPublicIpAddress`; elsewhere a
+    /// first-party IP tag makes public IP creation fail outright.
+    pub bastion_pip_ip_tags: String,
 }
 
 impl Default for AzlinConfig {
@@ -160,6 +198,7 @@ impl Default for AzlinConfig {
             scp_transfer_timeout: 120,
             az_cli_timeout: 120,
             restore_mode: RestoreMode::Auto,
+            bastion_pip_ip_tags: DEFAULT_BASTION_PIP_IP_TAGS.to_string(),
         }
     }
 }
@@ -328,6 +367,98 @@ impl AzlinConfig {
         Ok(())
     }
 
+    /// Resolve the effective Bastion public-IP `--ip-tags` value.
+    ///
+    /// Precedence:
+    /// 1. `AZLIN_BASTION_PIP_IP_TAGS` env var, if set to a valid tag. Setting it
+    ///    to an empty/whitespace value explicitly disables the tag.
+    /// 2. The persisted `bastion_pip_ip_tags` field, if non-empty.
+    /// 3. [`DEFAULT_BASTION_PIP_IP_TAGS`] (empty — no tag).
+    ///
+    /// An env value that fails validation is ignored (a warning is logged) and
+    /// resolution falls through to the field, then the default.
+    ///
+    /// **The returned value may be empty**, which means "emit no `--ip-tags`
+    /// argument". This deliberately differs from upstream `rysweet/azlin`, whose
+    /// resolver always returns a non-empty tag and therefore cannot be turned
+    /// off — making bastion creation impossible on any subscription that is not
+    /// registered for `Microsoft.Network/AllowBringYourOwnPublicIpAddress`.
+    pub fn bastion_pip_ip_tags(&self) -> String {
+        if let Ok(env_val) = std::env::var(ENV_BASTION_PIP_IP_TAGS) {
+            let trimmed = env_val.trim();
+            // An explicitly-empty env var is a deliberate "disable the tag".
+            if trimmed.is_empty() {
+                return String::new();
+            }
+            match Self::validate_bastion_pip_ip_tags(trimmed) {
+                Ok(()) => return trimmed.to_string(),
+                Err(e) => {
+                    tracing::warn!(
+                        env = ENV_BASTION_PIP_IP_TAGS,
+                        error = %e,
+                        "Ignoring invalid AZLIN_BASTION_PIP_IP_TAGS; \
+                         falling back to configured value"
+                    );
+                }
+            }
+        }
+
+        let field = self.bastion_pip_ip_tags.trim();
+        if field.is_empty() {
+            DEFAULT_BASTION_PIP_IP_TAGS.to_string()
+        } else {
+            field.to_string()
+        }
+    }
+
+    /// Validate a Bastion public-IP `--ip-tags` value.
+    ///
+    /// An empty or whitespace-only value is **valid** and means "no IP tag"
+    /// (upstream rejects it instead; see [`AzlinConfig::bastion_pip_ip_tags`]).
+    ///
+    /// Otherwise enforces an Azure `IpTagType=Tag` shape and guards against
+    /// argument injection when the value is later passed to the `az` CLI:
+    /// - Must contain `=` with a non-empty key.
+    /// - Key must not start with `-` (flag-injection guard).
+    /// - No control characters (including newlines).
+    /// - Length must be <= 512.
+    pub fn validate_bastion_pip_ip_tags(value: &str) -> crate::Result<()> {
+        // Empty means "disabled", not invalid.
+        if value.trim().is_empty() {
+            return Ok(());
+        }
+        if value.len() > 512 {
+            return Err(crate::AzlinError::Config(format!(
+                "bastion_pip_ip_tags is too long ({} chars, max 512)",
+                value.len()
+            )));
+        }
+        if value.chars().any(|c| c.is_control()) {
+            return Err(crate::AzlinError::Config(
+                "bastion_pip_ip_tags must not contain control characters".into(),
+            ));
+        }
+        let Some((key, _tag)) = value.split_once('=') else {
+            return Err(crate::AzlinError::Config(format!(
+                "bastion_pip_ip_tags must be 'Key=Value' (e.g. \
+                 'FirstPartyUsage=/ATEVETNonProd') or empty to disable, got '{}'",
+                value
+            )));
+        };
+        if key.trim().is_empty() {
+            return Err(crate::AzlinError::Config(
+                "bastion_pip_ip_tags key (before '=') must not be empty".into(),
+            ));
+        }
+        if key.trim_start().starts_with('-') {
+            return Err(crate::AzlinError::Config(format!(
+                "bastion_pip_ip_tags key must not start with '-' (got '{}')",
+                key
+            )));
+        }
+        Ok(())
+    }
+
     /// Boolean field names in the config.
     const BOOL_FIELDS: &[&str] = &[
         "ssh_auto_sync_keys",
@@ -444,6 +575,11 @@ impl AzlinConfig {
             }
         }
 
+        if key == "bastion_pip_ip_tags" {
+            Self::validate_bastion_pip_ip_tags(value)?;
+            return Ok(serde_json::Value::String(value.to_string()));
+        }
+
         if Self::BOOL_FIELDS.contains(&key) {
             match value {
                 "true" => return Ok(serde_json::Value::Bool(true)),
@@ -499,6 +635,16 @@ impl AzlinConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Serializes tests that mutate the process-global `AZLIN_BASTION_PIP_IP_TAGS`
+    /// env var, preventing races under the parallel test runner.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Acquire the env lock, ignoring poisoning from an unrelated failed test.
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
 
     #[test]
     fn test_default_config() {
@@ -772,6 +918,122 @@ mod tests {
         assert_eq!(loaded.ssh_sync_method, SshSyncMethod::Rsync);
         assert!(!loaded.resource_group_auto_detect);
         assert_eq!(loaded.bastion_detection_timeout, 120);
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_defaults_to_empty_no_tag() {
+        // Divergence from upstream: the default must be "no tag", so azlin works
+        // on subscriptions without AllowBringYourOwnPublicIpAddress registered.
+        assert_eq!(DEFAULT_BASTION_PIP_IP_TAGS, "");
+        assert_eq!(AzlinConfig::default().bastion_pip_ip_tags, "");
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_resolver_defaults_to_empty() {
+        let _guard = env_lock();
+        std::env::remove_var(ENV_BASTION_PIP_IP_TAGS);
+        assert_eq!(AzlinConfig::default().bastion_pip_ip_tags(), "");
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_resolver_uses_field() {
+        let _guard = env_lock();
+        std::env::remove_var(ENV_BASTION_PIP_IP_TAGS);
+        let config = AzlinConfig {
+            bastion_pip_ip_tags: MICROSOFT_FIRST_PARTY_IP_TAGS.to_string(),
+            ..Default::default()
+        };
+        assert_eq!(config.bastion_pip_ip_tags(), "FirstPartyUsage=/ATEVETNonProd");
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_env_overrides_field() {
+        let _guard = env_lock();
+        let config = AzlinConfig {
+            bastion_pip_ip_tags: "FirstPartyUsage=/FieldValue".to_string(),
+            ..Default::default()
+        };
+        std::env::set_var(ENV_BASTION_PIP_IP_TAGS, "FirstPartyUsage=/FromEnv");
+        let resolved = config.bastion_pip_ip_tags();
+        std::env::remove_var(ENV_BASTION_PIP_IP_TAGS);
+        assert_eq!(resolved, "FirstPartyUsage=/FromEnv");
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_empty_env_disables_tag() {
+        let _guard = env_lock();
+        let config = AzlinConfig {
+            bastion_pip_ip_tags: "FirstPartyUsage=/FieldValue".to_string(),
+            ..Default::default()
+        };
+        std::env::set_var(ENV_BASTION_PIP_IP_TAGS, "");
+        let resolved = config.bastion_pip_ip_tags();
+        std::env::remove_var(ENV_BASTION_PIP_IP_TAGS);
+        assert_eq!(resolved, "", "empty env var must explicitly disable the tag");
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_invalid_env_falls_back_to_field() {
+        let _guard = env_lock();
+        let config = AzlinConfig {
+            bastion_pip_ip_tags: "FirstPartyUsage=/FieldValue".to_string(),
+            ..Default::default()
+        };
+        std::env::set_var(ENV_BASTION_PIP_IP_TAGS, "-badkey=value");
+        let resolved = config.bastion_pip_ip_tags();
+        std::env::remove_var(ENV_BASTION_PIP_IP_TAGS);
+        assert_eq!(resolved, "FirstPartyUsage=/FieldValue");
+    }
+
+    #[test]
+    fn test_validate_bastion_pip_ip_tags_accepts_valid_and_empty() {
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags(MICROSOFT_FIRST_PARTY_IP_TAGS).is_ok());
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("FirstPartyUsage=/CustomTag").is_ok());
+        // Empty means "disabled", not invalid — diverges from upstream.
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("").is_ok());
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("   ").is_ok());
+    }
+
+    #[test]
+    fn test_validate_bastion_pip_ip_tags_rejects_invalid() {
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("NoEqualsSign").is_err());
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("=value").is_err());
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("-Key=value").is_err());
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags("Key=va\nlue").is_err());
+        let long = format!("Key={}", "x".repeat(600));
+        assert!(AzlinConfig::validate_bastion_pip_ip_tags(&long).is_err());
+    }
+
+    #[test]
+    fn test_validate_field_routes_bastion_pip_ip_tags() {
+        let ok = AzlinConfig::validate_field("bastion_pip_ip_tags", "FirstPartyUsage=/CustomTag");
+        assert!(ok.is_ok());
+        let bad = AzlinConfig::validate_field("bastion_pip_ip_tags", "NoEqualsSign");
+        assert!(
+            bad.is_err(),
+            "bastion_pip_ip_tags must be validated, not passed through as a generic string"
+        );
+        // Setting it to empty disables the tag and must be accepted.
+        assert!(AzlinConfig::validate_field("bastion_pip_ip_tags", "").is_ok());
+    }
+
+    #[test]
+    fn test_bastion_pip_ip_tags_roundtrip() {
+        let toml_str = r#"
+            bastion_pip_ip_tags = "FirstPartyUsage=/ATEVETNonProd"
+        "#;
+        let config: AzlinConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.bastion_pip_ip_tags, "FirstPartyUsage=/ATEVETNonProd");
+
+        let serialized = toml::to_string_pretty(&config).unwrap();
+        let reloaded: AzlinConfig = toml::from_str(&serialized).unwrap();
+        assert_eq!(reloaded.bastion_pip_ip_tags, config.bastion_pip_ip_tags);
+    }
+
+    #[test]
+    fn test_old_config_without_bastion_pip_ip_tags_deserializes_to_no_tag() {
+        let config: AzlinConfig = toml::from_str(r#"default_region = "eastus""#).unwrap();
+        assert_eq!(config.bastion_pip_ip_tags, DEFAULT_BASTION_PIP_IP_TAGS);
     }
 
     #[test]

@@ -19,15 +19,15 @@ scenario:
     - "azlin workspace at ./rust/"
 
   steps:
-    # Run bastion_helpers unit tests (17 tests)
+    # Run bastion_helpers unit tests (21 tests)
     - action: launch
       target: "cargo"
       args: ["test", "-q", "-p", "azlin", "--bin", "azlin", "--", "bastion_helpers"]
       cwd: "./rust"
 
     - action: verify_output
-      matches: "test result: ok\\. 17 passed"
-      description: "All 17 bastion_helpers tests should pass"
+      matches: "test result: ok\\. 21 passed"
+      description: "All 21 bastion_helpers tests should pass"
 
     - action: verify_exit_code
       expected: 0
