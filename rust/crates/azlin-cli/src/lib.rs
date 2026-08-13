@@ -509,8 +509,19 @@ pub enum Commands {
         remote_command: Vec<String>,
     },
 
-    /// Open a remote GUI desktop session via VNC
+    /// Open a remote GUI desktop session, or install one with `gui install`
+    ///
+    /// Azure Linux ships no desktop, VNC server or RDP server, so the desktop
+    /// stack runs as a container on the VM. Install it once with
+    /// `azlin gui install <vm>`, then connect with `azlin gui <vm>`.
+    ///
+    /// To target a VM literally named "install", use `azlin gui -- install`.
+    #[command(args_conflicts_with_subcommands = true, subcommand_negates_reqs = true)]
     Gui {
+        /// Desktop management subcommands (e.g. `install`)
+        #[command(subcommand)]
+        action: Option<GuiAction>,
+
         /// VM name or identifier
         vm_identifier: Option<String>,
 
@@ -1174,6 +1185,75 @@ pub enum Commands {
 // ---------------------------------------------------------------------------
 // Subcommand enums
 // ---------------------------------------------------------------------------
+
+// ── GUI subcommands ───────────────────────────────────────────────────────
+
+/// Remote-desktop wire protocol for `azlin gui install`.
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum GuiProtocol {
+    /// TigerVNC RFB on 5901, for a standard VNC viewer
+    #[default]
+    Vnc,
+    /// xrdp on 3389, for a standard RDP client
+    Rdp,
+}
+
+impl GuiProtocol {
+    /// Map onto the planner's protocol type.
+    pub fn to_core(self) -> azlin_core::gui_container::GuiProtocol {
+        match self {
+            Self::Vnc => azlin_core::gui_container::GuiProtocol::Vnc,
+            Self::Rdp => azlin_core::gui_container::GuiProtocol::Rdp,
+        }
+    }
+}
+
+#[derive(Subcommand, Debug)]
+pub enum GuiAction {
+    /// Install the containerised remote desktop stack on a VM
+    ///
+    /// Azure Linux provides no VNC server, RDP server or desktop environment in
+    /// its repositories, so azlin runs a prebuilt desktop container on the VM's
+    /// Docker. The desktop port is published on the VM's loopback interface only
+    /// and is reached through azlin's existing SSH tunnel; no network security
+    /// group rule is ever created.
+    Install {
+        /// VM name or identifier
+        vm_identifier: Option<String>,
+
+        /// Remote desktop protocol to install
+        #[arg(long, value_enum, default_value = "vnc")]
+        protocol: GuiProtocol,
+
+        /// Resource group
+        #[arg(long, alias = "rg")]
+        resource_group: Option<String>,
+
+        /// SSH username
+        #[arg(long, default_value = "azureuser")]
+        user: String,
+
+        /// SSH private key path
+        #[arg(long)]
+        key: Option<PathBuf>,
+
+        /// Desktop resolution
+        #[arg(long, default_value = "1920x1080")]
+        resolution: String,
+
+        /// Desktop colour depth
+        #[arg(long, default_value = "24")]
+        depth: u8,
+
+        /// Remove the desktop container and its state instead of installing
+        #[arg(long)]
+        uninstall: bool,
+
+        /// Skip prompts (auto-accept)
+        #[arg(short, long)]
+        yes: bool,
+    },
+}
 
 // ── VM subcommands ────────────────────────────────────────────────────────
 

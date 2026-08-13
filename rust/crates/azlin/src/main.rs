@@ -1047,8 +1047,9 @@ mod create_helpers;
 /// Pure helpers for the connect handler: SSH arg building, VS Code URI construction.
 mod connect_helpers;
 
-/// Snap-aware wrappers for GUI/X11 command launches.
+/// Pure helpers for launching GUI apps remotely (X11 forwarding, snap wrapping).
 mod gui_launch_helpers;
+
 
 /// Pure helpers for update/os-update commands: script generation.
 mod update_helpers;
@@ -1124,6 +1125,7 @@ mod cmd_connect;
 mod cmd_context;
 mod cmd_env;
 mod cmd_gui;
+mod cmd_gui_install;
 #[allow(dead_code)]
 mod cmd_history;
 mod cmd_infra;
