@@ -9,7 +9,7 @@ description = "Azure VM fleet management CLI (Rust) — provision, manage, and m
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [{name = "Ryan Sweet", email = "rysweet@microsoft.com"}]
-readme = "../README.md"
+readme = {text = "azlin is a command-line tool for provisioning and managing fleets of Azure Linux virtual machines. It creates development VMs from a single command, keeps track of the machines you own, and lets you connect to, monitor, and tear them down again without leaving the terminal. This package ships the Rust implementation as a prebuilt binary.", content-type = "text/plain"}
 keywords = ["azure", "vm", "cli", "rust", "devops", "cloud", "provisioning"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -21,9 +21,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rysweet/azlin"
-Repository = "https://github.com/rysweet/azlin"
-Documentation = "https://rysweet.github.io/azlin/"
+Homepage = "https://github.com/ahrkrak/azlin"
+Repository = "https://github.com/ahrkrak/azlin"
+Documentation = "https://github.com/ahrkrak/azlin/tree/main/docs"
 
 [tool.maturin]
 manifest-path = "crates/azlin/Cargo.toml"
